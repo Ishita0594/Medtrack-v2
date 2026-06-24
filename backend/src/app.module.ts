@@ -1,9 +1,33 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import configuration from './config/configuration';
+import { validateEnvironment } from './config/env.validation';
+import { DynamoDbModule } from './database/dynamodb/dynamodb.module';
+import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
+import { MedicationsModule } from './medications/medications.module';
+import { AdherenceModule } from './adherence/adherence.module';
+import { CaregiversModule } from './caregivers/caregivers.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
-  imports: [],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+      load: [configuration],
+      validate: validateEnvironment,
+    }),
+    DynamoDbModule,
+    UsersModule,
+    AuthModule,
+    MedicationsModule,
+    AdherenceModule,
+    CaregiversModule,
+    NotificationsModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
