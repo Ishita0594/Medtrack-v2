@@ -6,8 +6,10 @@ export default () => ({
   },
   aws: {
     region: process.env.AWS_REGION ?? 'ap-south-1',
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     dynamodbEndpoint: process.env.DYNAMODB_ENDPOINT,
-    dynamodbTablePrefix: process.env.DYNAMODB_TABLE_PREFIX ?? 'medtrack_',
+    dynamodbTableName: process.env.DYNAMODB_TABLE_NAME ?? 'MedTrack',
   },
   jwt: {
     secret: process.env.JWT_SECRET ?? 'change-me-in-production',

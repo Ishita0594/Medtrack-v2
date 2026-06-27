@@ -2,13 +2,15 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { InMemoryUserRepository } from './repositories/in-memory-user.repository';
+import { DynamoDbModule } from '../database/dynamodb/dynamodb.module';
+import { DynamoDbUserRepository } from './repositories/dynamodb-user.repository';
 import { USER_REPOSITORY } from './repositories/user.repository';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 
 @Module({
   imports: [
+    DynamoDbModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -23,7 +25,7 @@ import { UsersService } from './users.service';
     JwtAuthGuard,
     {
       provide: USER_REPOSITORY,
-      useClass: InMemoryUserRepository,
+      useClass: DynamoDbUserRepository,
     },
   ],
   exports: [UsersService, USER_REPOSITORY],

@@ -6,6 +6,13 @@ export function validateEnvironment(
   const nodeEnv = String(config.NODE_ENV ?? 'development');
   const port = Number(config.PORT ?? 3000);
   const awsRegion = String(config.AWS_REGION ?? 'ap-south-1');
+  const awsAccessKeyId = config.AWS_ACCESS_KEY_ID
+    ? String(config.AWS_ACCESS_KEY_ID)
+    : undefined;
+  const awsSecretAccessKey = config.AWS_SECRET_ACCESS_KEY
+    ? String(config.AWS_SECRET_ACCESS_KEY)
+    : undefined;
+  const dynamodbTableName = String(config.DYNAMODB_TABLE_NAME ?? 'MedTrack');
   const jwtSecret = String(config.JWT_SECRET ?? 'change-me-in-production');
   const jwtAccessTokenExpiresIn = Number(
     config.JWT_ACCESS_TOKEN_EXPIRES_IN ?? 900,
@@ -22,6 +29,16 @@ export function validateEnvironment(
 
   if (!awsRegion.trim()) {
     throw new Error('AWS_REGION is required');
+  }
+
+  if (Boolean(awsAccessKeyId) !== Boolean(awsSecretAccessKey)) {
+    throw new Error(
+      'AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY must be provided together',
+    );
+  }
+
+  if (!dynamodbTableName.trim()) {
+    throw new Error('DYNAMODB_TABLE_NAME is required');
   }
 
   if (jwtSecret.length < 16) {
@@ -50,6 +67,7 @@ export function validateEnvironment(
     NODE_ENV: nodeEnv,
     PORT: String(port),
     AWS_REGION: awsRegion,
+    DYNAMODB_TABLE_NAME: dynamodbTableName,
     JWT_SECRET: jwtSecret,
     JWT_ACCESS_TOKEN_EXPIRES_IN: String(jwtAccessTokenExpiresIn),
     BCRYPT_SALT_ROUNDS: String(bcryptSaltRounds),

@@ -15,10 +15,7 @@ export class DynamoDbService {
     return this.documentClient;
   }
 
-  tableName(name: string): string {
-    const prefix =
-      this.configService.get<string>('aws.dynamodbTablePrefix') ?? '';
-
-    return `${prefix}${name}`;
+  get tableName(): string {
+    return this.configService.getOrThrow<string>('aws.dynamodbTableName');
   }
 }

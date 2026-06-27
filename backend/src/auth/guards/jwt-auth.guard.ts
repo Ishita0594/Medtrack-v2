@@ -29,7 +29,7 @@ export class JwtAuthGuard implements CanActivate {
 
       return true;
     } catch {
-      throw new InvalidCredentialsException();
+      throw new AuthenticationRequiredException();
     }
   }
 
