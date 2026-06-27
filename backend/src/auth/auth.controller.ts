@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import {
   ApiConflictResponse,
   ApiCreatedResponse,
@@ -7,6 +7,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { AuthResponseDto } from './dto/auth-response.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthService } from './auth.service';
@@ -20,6 +21,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Register a new user' })
   @ApiCreatedResponse({
     description: 'User registered and JWT access token issued',
+    type: AuthResponseDto,
   })
   @ApiConflictResponse({ description: 'Email is already registered' })
   register(@Body() registerDto: RegisterDto) {
@@ -27,8 +29,12 @@ export class AuthController {
   }
 
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login with email and password' })
-  @ApiOkResponse({ description: 'JWT access token issued' })
+  @ApiOkResponse({
+    description: 'JWT access token issued',
+    type: AuthResponseDto,
+  })
   @ApiUnauthorizedResponse({ description: 'Invalid email or password' })
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);

@@ -1,4 +1,5 @@
 import { ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsEmail,
   IsEnum,
@@ -6,7 +7,8 @@ import {
   IsPhoneNumber,
   IsString,
 } from 'class-validator';
-import { CreateUserDto, UserRole } from './create-user.dto';
+import { UserRole } from '../enums/user-role.enum';
+import { CreateUserDto } from './create-user.dto';
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
   @ApiPropertyOptional({
@@ -15,6 +17,7 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   })
   @IsOptional()
   @IsString()
+  @Transform(({ value }: { value: string }) => value?.trim())
   declare name?: string;
 
   @ApiPropertyOptional({
@@ -23,6 +26,7 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   })
   @IsOptional()
   @IsEmail()
+  @Transform(({ value }: { value: string }) => value?.trim().toLowerCase())
   declare email?: string;
 
   @ApiPropertyOptional({
@@ -31,6 +35,7 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   })
   @IsOptional()
   @IsPhoneNumber()
+  @Transform(({ value }: { value: string }) => value?.trim())
   declare phone?: string;
 
   @ApiPropertyOptional({

@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsEmail,
   IsEnum,
@@ -6,8 +7,9 @@ import {
   IsPhoneNumber,
   IsString,
   MinLength,
+  Matches,
 } from 'class-validator';
-import { UserRole } from '../../users/dto/create-user.dto';
+import { UserRole } from '../../users/enums/user-role.enum';
 
 export class RegisterDto {
   @ApiProperty({
@@ -16,6 +18,7 @@ export class RegisterDto {
   })
   @IsString()
   @IsNotEmpty()
+  @Transform(({ value }: { value: string }) => value?.trim())
   name: string;
 
   @ApiProperty({
@@ -23,6 +26,7 @@ export class RegisterDto {
     description: 'Unique email address used for login',
   })
   @IsEmail()
+  @Transform(({ value }: { value: string }) => value?.trim().toLowerCase())
   email: string;
 
   @ApiProperty({
@@ -30,6 +34,7 @@ export class RegisterDto {
     description: 'Contact phone number in international format',
   })
   @IsPhoneNumber()
+  @Transform(({ value }: { value: string }) => value?.trim())
   phone: string;
 
   @ApiProperty({
@@ -47,5 +52,9 @@ export class RegisterDto {
   })
   @IsString()
   @MinLength(8)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/, {
+    message:
+      'password must include uppercase, lowercase, number, and special character',
+  })
   password: string;
 }

@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsEmail,
   IsEnum,
@@ -6,11 +7,7 @@ import {
   IsPhoneNumber,
   IsString,
 } from 'class-validator';
-
-export enum UserRole {
-  PATIENT = 'PATIENT',
-  CAREGIVER = 'CAREGIVER',
-}
+import { UserRole } from '../enums/user-role.enum';
 
 export class CreateUserDto {
   @ApiProperty({
@@ -19,6 +16,7 @@ export class CreateUserDto {
   })
   @IsString()
   @IsNotEmpty()
+  @Transform(({ value }: { value: string }) => value?.trim())
   name: string;
 
   @ApiProperty({
@@ -26,6 +24,7 @@ export class CreateUserDto {
     description: 'Unique email address for the user',
   })
   @IsEmail()
+  @Transform(({ value }: { value: string }) => value?.trim().toLowerCase())
   email: string;
 
   @ApiProperty({
@@ -33,6 +32,7 @@ export class CreateUserDto {
     description: 'Contact phone number in international format',
   })
   @IsPhoneNumber()
+  @Transform(({ value }: { value: string }) => value?.trim())
   phone: string;
 
   @ApiProperty({

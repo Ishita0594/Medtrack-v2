@@ -7,6 +7,9 @@ export function validateEnvironment(
   const port = Number(config.PORT ?? 3000);
   const awsRegion = String(config.AWS_REGION ?? 'ap-south-1');
   const jwtSecret = String(config.JWT_SECRET ?? 'change-me-in-production');
+  const jwtAccessTokenExpiresIn = Number(
+    config.JWT_ACCESS_TOKEN_EXPIRES_IN ?? 900,
+  );
   const bcryptSaltRounds = Number(config.BCRYPT_SALT_ROUNDS ?? 12);
 
   if (!allowedNodeEnvs.includes(nodeEnv)) {
@@ -26,6 +29,15 @@ export function validateEnvironment(
   }
 
   if (
+    !Number.isInteger(jwtAccessTokenExpiresIn) ||
+    jwtAccessTokenExpiresIn < 60
+  ) {
+    throw new Error(
+      'JWT_ACCESS_TOKEN_EXPIRES_IN must be an integer of at least 60 seconds',
+    );
+  }
+
+  if (
     !Number.isInteger(bcryptSaltRounds) ||
     bcryptSaltRounds < 10 ||
     bcryptSaltRounds > 15
@@ -39,6 +51,7 @@ export function validateEnvironment(
     PORT: String(port),
     AWS_REGION: awsRegion,
     JWT_SECRET: jwtSecret,
+    JWT_ACCESS_TOKEN_EXPIRES_IN: String(jwtAccessTokenExpiresIn),
     BCRYPT_SALT_ROUNDS: String(bcryptSaltRounds),
   };
 }
