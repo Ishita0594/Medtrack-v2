@@ -14,6 +14,8 @@ export default () => ({
       process.env.DYNAMODB_MEDICATIONS_TABLE_NAME ?? 'Medications',
     refreshTokensTableName:
       process.env.DYNAMODB_REFRESH_TOKENS_TABLE_NAME ?? 'RefreshTokens',
+    adherenceTableName:
+      process.env.DYNAMODB_ADHERENCE_TABLE_NAME ?? 'AdherenceRecords',
   },
   jwt: {
     secret: process.env.JWT_SECRET ?? 'change-me-in-production',

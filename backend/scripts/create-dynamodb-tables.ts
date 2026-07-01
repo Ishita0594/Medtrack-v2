@@ -102,6 +102,9 @@ async function main(): Promise<void> {
     const refreshTokensTableName = requiredEnvironment(
       'DYNAMODB_REFRESH_TOKENS_TABLE_NAME',
     );
+    const adherenceTableName = requiredEnvironment(
+      'DYNAMODB_ADHERENCE_TABLE_NAME',
+    );
 
     console.log('Initializing DynamoDB tables');
 
@@ -140,6 +143,19 @@ async function main(): Promise<void> {
       BillingMode: 'PAY_PER_REQUEST',
       AttributeDefinitions: [{ AttributeName: 'tokenId', AttributeType: 'S' }],
       KeySchema: [{ AttributeName: 'tokenId', KeyType: 'HASH' }],
+    });
+
+    await ensureTable(client, {
+      TableName: adherenceTableName,
+      BillingMode: 'PAY_PER_REQUEST',
+      AttributeDefinitions: [
+        { AttributeName: 'userId', AttributeType: 'S' },
+        { AttributeName: 'recordId', AttributeType: 'S' },
+      ],
+      KeySchema: [
+        { AttributeName: 'userId', KeyType: 'HASH' },
+        { AttributeName: 'recordId', KeyType: 'RANGE' },
+      ],
     });
 
     console.log('DynamoDB initialization complete');

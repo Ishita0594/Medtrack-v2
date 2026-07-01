@@ -26,4 +26,8 @@ export class DynamoDbService {
   get refreshTokensTableName(): string {
     return this.configService.getOrThrow<string>('aws.refreshTokensTableName');
   }
+
+  get adherenceTableName(): string {
+    return this.configService.getOrThrow<string>('aws.adherenceTableName');
+  }
 }
