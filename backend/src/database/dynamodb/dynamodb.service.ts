@@ -30,4 +30,8 @@ export class DynamoDbService {
   get adherenceTableName(): string {
     return this.configService.getOrThrow<string>('aws.adherenceTableName');
   }
+
+  get reminderEventsTableName(): string {
+    return this.configService.getOrThrow<string>('aws.reminderEventsTableName');
+  }
 }

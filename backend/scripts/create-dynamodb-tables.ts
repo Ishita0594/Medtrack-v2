@@ -105,6 +105,9 @@ async function main(): Promise<void> {
     const adherenceTableName = requiredEnvironment(
       'DYNAMODB_ADHERENCE_TABLE_NAME',
     );
+    const reminderEventsTableName = requiredEnvironment(
+      'DYNAMODB_REMINDER_EVENTS_TABLE_NAME',
+    );
 
     console.log('Initializing DynamoDB tables');
 
@@ -155,6 +158,31 @@ async function main(): Promise<void> {
       KeySchema: [
         { AttributeName: 'userId', KeyType: 'HASH' },
         { AttributeName: 'recordId', KeyType: 'RANGE' },
+      ],
+    });
+
+    await ensureTable(client, {
+      TableName: reminderEventsTableName,
+      BillingMode: 'PAY_PER_REQUEST',
+      AttributeDefinitions: [
+        { AttributeName: 'userId', AttributeType: 'S' },
+        { AttributeName: 'reminderId', AttributeType: 'S' },
+        { AttributeName: 'status', AttributeType: 'S' },
+        { AttributeName: 'scheduledAt', AttributeType: 'N' },
+      ],
+      KeySchema: [
+        { AttributeName: 'userId', KeyType: 'HASH' },
+        { AttributeName: 'reminderId', KeyType: 'RANGE' },
+      ],
+      GlobalSecondaryIndexes: [
+        {
+          IndexName: 'ReminderEventsByScheduledTime',
+          KeySchema: [
+            { AttributeName: 'status', KeyType: 'HASH' },
+            { AttributeName: 'scheduledAt', KeyType: 'RANGE' },
+          ],
+          Projection: { ProjectionType: 'ALL' },
+        },
       ],
     });
 

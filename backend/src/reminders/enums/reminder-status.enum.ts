@@ -1,0 +1,7 @@
+export enum ReminderStatus {
+  PENDING = 'PENDING',
+  SENT = 'SENT',
+  ACKNOWLEDGED = 'ACKNOWLEDGED',
+  MISSED = 'MISSED',
+  CANCELLED = 'CANCELLED',
+}

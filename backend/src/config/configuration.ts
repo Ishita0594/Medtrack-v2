@@ -16,6 +16,8 @@ export default () => ({
       process.env.DYNAMODB_REFRESH_TOKENS_TABLE_NAME ?? 'RefreshTokens',
     adherenceTableName:
       process.env.DYNAMODB_ADHERENCE_TABLE_NAME ?? 'AdherenceRecords',
+    reminderEventsTableName:
+      process.env.DYNAMODB_REMINDER_EVENTS_TABLE_NAME ?? 'ReminderEvents',
   },
   jwt: {
     secret: process.env.JWT_SECRET ?? 'change-me-in-production',

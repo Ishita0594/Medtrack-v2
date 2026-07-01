@@ -1,3 +1,7 @@
+jest.mock('uuid', () => ({
+  v7: jest.fn(() => '01972e60-7f2c-75be-89a4-cfd939f272ce'),
+}));
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';

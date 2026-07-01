@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import configuration from './config/configuration';
@@ -11,6 +12,7 @@ import { MedicationsModule } from './medications/medications.module';
 import { AdherenceModule } from './adherence/adherence.module';
 import { CaregiversModule } from './caregivers/caregivers.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { RemindersModule } from './reminders/reminders.module';
 
 @Module({
   imports: [
@@ -20,6 +22,7 @@ import { NotificationsModule } from './notifications/notifications.module';
       load: [configuration],
       validate: validateEnvironment,
     }),
+    ScheduleModule.forRoot(),
     DynamoDbModule,
     UsersModule,
     AuthModule,
@@ -27,6 +30,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     AdherenceModule,
     CaregiversModule,
     NotificationsModule,
+    RemindersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
