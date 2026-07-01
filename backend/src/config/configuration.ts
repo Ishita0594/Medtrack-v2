@@ -9,7 +9,11 @@ export default () => ({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     dynamodbEndpoint: process.env.DYNAMODB_ENDPOINT,
-    dynamodbTableName: process.env.DYNAMODB_TABLE_NAME ?? 'MedTrack',
+    usersTableName: process.env.DYNAMODB_USERS_TABLE_NAME ?? 'Users',
+    medicationsTableName:
+      process.env.DYNAMODB_MEDICATIONS_TABLE_NAME ?? 'Medications',
+    refreshTokensTableName:
+      process.env.DYNAMODB_REFRESH_TOKENS_TABLE_NAME ?? 'RefreshTokens',
   },
   jwt: {
     secret: process.env.JWT_SECRET ?? 'change-me-in-production',

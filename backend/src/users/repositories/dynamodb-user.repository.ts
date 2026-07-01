@@ -2,12 +2,13 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   DeleteCommand,
   GetCommand,
+  PutCommand,
   QueryCommand,
-  TransactWriteCommand,
+  ScanCommand,
   UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
-import { DynamoDbService } from '../../database/dynamodb/dynamodb.service';
 import { DYNAMODB_INDEXES } from '../../database/dynamodb/dynamodb.constants';
+import { DynamoDbService } from '../../database/dynamodb/dynamodb.service';
 import { UserAlreadyExistsException } from '../exceptions/user-already-exists.exception';
 import { USER_DEFAULTS } from '../users.constants';
 import { UserRecord } from '../users.types';
@@ -17,13 +18,6 @@ import {
   UserRepository,
 } from './user.repository';
 
-interface UserItem extends UserRecord {
-  GSI1PK: string;
-  GSI1SK: 'PROFILE';
-  GSI2PK: 'ENTITY#USER';
-  GSI2SK: string;
-}
-
 @Injectable()
 export class DynamoDbUserRepository implements UserRepository {
   private readonly logger = new Logger(DynamoDbUserRepository.name);
@@ -32,17 +26,10 @@ export class DynamoDbUserRepository implements UserRepository {
 
   async create(input: CreateUserRecordInput): Promise<UserRecord> {
     const now = Date.now();
-    const email = this.normalizeEmail(input.email);
-    const item: UserItem = {
-      PK: this.userPk(input.userId),
-      SK: 'PROFILE',
-      GSI1PK: this.emailPk(email),
-      GSI1SK: 'PROFILE',
-      GSI2PK: 'ENTITY#USER',
-      GSI2SK: `${now}#${input.userId}`,
+    const item: UserRecord = {
       userId: input.userId,
       name: input.name.trim(),
-      email,
+      email: this.normalizeEmail(input.email),
       phone: input.phone.trim(),
       role: input.role,
       passwordHash: input.passwordHash,
@@ -56,28 +43,10 @@ export class DynamoDbUserRepository implements UserRepository {
 
     try {
       await this.dynamoDb.client.send(
-        new TransactWriteCommand({
-          TransactItems: [
-            {
-              Put: {
-                TableName: this.dynamoDb.tableName,
-                Item: item,
-                ConditionExpression: 'attribute_not_exists(PK)',
-              },
-            },
-            {
-              Put: {
-                TableName: this.dynamoDb.tableName,
-                Item: {
-                  PK: this.emailPk(email),
-                  SK: 'CLAIM',
-                  userId: input.userId,
-                  createdAt: now,
-                },
-                ConditionExpression: 'attribute_not_exists(PK)',
-              },
-            },
-          ],
+        new PutCommand({
+          TableName: this.dynamoDb.usersTableName,
+          Item: item,
+          ConditionExpression: 'attribute_not_exists(userId)',
         }),
       );
     } catch (error) {
@@ -98,13 +67,14 @@ export class DynamoDbUserRepository implements UserRepository {
     try {
       const result = await this.dynamoDb.client.send(
         new GetCommand({
-          TableName: this.dynamoDb.tableName,
-          Key: { PK: this.userPk(userId), SK: 'PROFILE' },
+          TableName: this.dynamoDb.usersTableName,
+          Key: { userId },
           ConsistentRead: true,
         }),
       );
+      const item = result.Item;
 
-      return (result.Item as UserItem | undefined) ?? null;
+      return this.isUserRecord(item) ? item : null;
     } catch (error) {
       this.logFailure('findById', userId, error);
       throw error;
@@ -118,34 +88,15 @@ export class DynamoDbUserRepository implements UserRepository {
     try {
       const result = await this.dynamoDb.client.send(
         new QueryCommand({
-          TableName: this.dynamoDb.tableName,
-          IndexName: DYNAMODB_INDEXES.email,
-          KeyConditionExpression: 'GSI1PK = :pk AND GSI1SK = :sk',
-          ExpressionAttributeValues: {
-            ':pk': this.emailPk(normalizedEmail),
-            ':sk': 'PROFILE',
-          },
+          TableName: this.dynamoDb.usersTableName,
+          IndexName: DYNAMODB_INDEXES.usersByEmail,
+          KeyConditionExpression: 'email = :email',
+          ExpressionAttributeValues: { ':email': normalizedEmail },
           Limit: 1,
         }),
       );
 
-      const indexedUser = result.Items?.[0] as UserItem | undefined;
-
-      if (indexedUser?.email === normalizedEmail) {
-        return indexedUser;
-      }
-
-      // GSI updates are eventually consistent; the claim supports immediate login.
-      const claim = await this.dynamoDb.client.send(
-        new GetCommand({
-          TableName: this.dynamoDb.tableName,
-          Key: { PK: this.emailPk(normalizedEmail), SK: 'CLAIM' },
-          ConsistentRead: true,
-        }),
-      );
-      const userId = claim.Item?.userId as string | undefined;
-
-      return userId ? this.findById(userId) : null;
+      return (result.Items?.[0] as UserRecord | undefined) ?? null;
     } catch (error) {
       this.logFailure('findByEmail', undefined, error);
       throw error;
@@ -156,79 +107,47 @@ export class DynamoDbUserRepository implements UserRepository {
     userId: string,
     input: UpdateUserRecordInput,
   ): Promise<UserRecord | null> {
-    const existing = await this.findById(userId);
-
-    if (!existing) {
-      return null;
-    }
-
-    const normalizedInput = this.normalizeUpdate(input);
-    const emailChanged =
-      normalizedInput.email !== undefined &&
-      normalizedInput.email !== existing.email;
-    const update = this.buildUpdate({
-      ...normalizedInput,
-      ...(emailChanged
-        ? { GSI1PK: this.emailPk(normalizedInput.email as string) }
-        : {}),
-    });
-
+    const update = this.buildUpdate(this.normalizeUpdate(input));
     this.logger.debug(`Updating user ${userId}`);
 
     try {
-      if (emailChanged && normalizedInput.email) {
-        await this.updateWithEmailChange(
-          userId,
-          existing.email,
-          normalizedInput.email,
-          update,
-        );
-      } else {
-        await this.dynamoDb.client.send(
-          new UpdateCommand({
-            TableName: this.dynamoDb.tableName,
-            Key: { PK: this.userPk(userId), SK: 'PROFILE' },
-            ...update,
-            ConditionExpression: 'attribute_exists(PK)',
-          }),
-        );
-      }
+      const result = await this.dynamoDb.client.send(
+        new UpdateCommand({
+          TableName: this.dynamoDb.usersTableName,
+          Key: { userId },
+          ...update,
+          ConditionExpression: 'attribute_exists(userId)',
+          ReturnValues: 'ALL_NEW',
+        }),
+      );
+
+      return (result.Attributes as UserRecord | undefined) ?? null;
     } catch (error) {
       if (this.isConditionalFailure(error)) {
-        throw new UserAlreadyExistsException();
+        return null;
       }
 
       this.logFailure('update', userId, error);
       throw error;
     }
-
-    return this.findById(userId);
   }
 
   async delete(userId: string): Promise<void> {
-    const existing = await this.findById(userId);
-
-    if (!existing) {
-      return;
-    }
-
     this.logger.debug(`Deleting user ${userId}`);
 
     try {
       await this.dynamoDb.client.send(
         new DeleteCommand({
-          TableName: this.dynamoDb.tableName,
-          Key: { PK: this.userPk(userId), SK: 'PROFILE' },
-          ConditionExpression: 'attribute_exists(PK)',
-        }),
-      );
-      await this.dynamoDb.client.send(
-        new DeleteCommand({
-          TableName: this.dynamoDb.tableName,
-          Key: { PK: this.emailPk(existing.email), SK: 'CLAIM' },
+          TableName: this.dynamoDb.usersTableName,
+          Key: { userId },
+          ConditionExpression: 'attribute_exists(userId)',
         }),
       );
     } catch (error) {
+      if (this.isConditionalFailure(error)) {
+        return;
+      }
+
       this.logFailure('delete', userId, error);
       throw error;
     }
@@ -243,16 +162,19 @@ export class DynamoDbUserRepository implements UserRepository {
 
       do {
         const result = await this.dynamoDb.client.send(
-          new QueryCommand({
-            TableName: this.dynamoDb.tableName,
-            IndexName: DYNAMODB_INDEXES.users,
-            KeyConditionExpression: 'GSI2PK = :pk',
-            ExpressionAttributeValues: { ':pk': 'ENTITY#USER' },
+          new ScanCommand({
+            TableName: this.dynamoDb.usersTableName,
+            FilterExpression:
+              'attribute_exists(email) AND attribute_exists(#name) AND attribute_exists(#role)',
+            ExpressionAttributeNames: {
+              '#name': 'name',
+              '#role': 'role',
+            },
             ExclusiveStartKey: exclusiveStartKey,
           }),
         );
 
-        users.push(...((result.Items as UserItem[] | undefined) ?? []));
+        users.push(...((result.Items as UserRecord[] | undefined) ?? []));
         exclusiveStartKey = result.LastEvaluatedKey;
       } while (exclusiveStartKey);
 
@@ -263,55 +185,12 @@ export class DynamoDbUserRepository implements UserRepository {
     }
   }
 
-  private async updateWithEmailChange(
-    userId: string,
-    oldEmail: string,
-    newEmail: string,
-    update: Pick<
-      ReturnType<DynamoDbUserRepository['buildUpdate']>,
-      keyof ReturnType<DynamoDbUserRepository['buildUpdate']>
-    >,
-  ): Promise<void> {
-    await this.dynamoDb.client.send(
-      new TransactWriteCommand({
-        TransactItems: [
-          {
-            Put: {
-              TableName: this.dynamoDb.tableName,
-              Item: {
-                PK: this.emailPk(newEmail),
-                SK: 'CLAIM',
-                userId,
-                createdAt: Date.now(),
-              },
-              ConditionExpression: 'attribute_not_exists(PK)',
-            },
-          },
-          {
-            Update: {
-              TableName: this.dynamoDb.tableName,
-              Key: { PK: this.userPk(userId), SK: 'PROFILE' },
-              ...update,
-              ConditionExpression: 'attribute_exists(PK)',
-            },
-          },
-          {
-            Delete: {
-              TableName: this.dynamoDb.tableName,
-              Key: { PK: this.emailPk(oldEmail), SK: 'CLAIM' },
-            },
-          },
-        ],
-      }),
-    );
-  }
-
-  private buildUpdate(input: Record<string, unknown>): {
+  private buildUpdate(input: UpdateUserRecordInput): {
     UpdateExpression: string;
     ExpressionAttributeNames: Record<string, string>;
     ExpressionAttributeValues: Record<string, unknown>;
   } {
-    const values: Record<string, unknown> = {
+    const values = {
       ...Object.fromEntries(
         Object.entries(input).filter(([, value]) => value !== undefined),
       ),
@@ -343,26 +222,29 @@ export class DynamoDbUserRepository implements UserRepository {
     };
   }
 
-  private userPk(userId: string): string {
-    return `USER#${userId}`;
-  }
-
-  private emailPk(email: string): string {
-    return `EMAIL#${email}`;
-  }
-
   private normalizeEmail(email: string): string {
     return email.trim().toLowerCase();
   }
 
-  private isConditionalFailure(error: unknown): boolean {
-    if (!(error instanceof Error)) {
+  private isUserRecord(item: unknown): item is UserRecord {
+    if (!item || typeof item !== 'object') {
       return false;
     }
 
+    const record = item as Partial<UserRecord>;
+
     return (
-      error.name === 'ConditionalCheckFailedException' ||
-      error.name === 'TransactionCanceledException'
+      typeof record.userId === 'string' &&
+      typeof record.name === 'string' &&
+      typeof record.email === 'string' &&
+      typeof record.phone === 'string' &&
+      typeof record.role === 'string'
+    );
+  }
+
+  private isConditionalFailure(error: unknown): boolean {
+    return (
+      error instanceof Error && error.name === 'ConditionalCheckFailedException'
     );
   }
 

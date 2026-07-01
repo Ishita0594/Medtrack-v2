@@ -15,7 +15,15 @@ export class DynamoDbService {
     return this.documentClient;
   }
 
-  get tableName(): string {
-    return this.configService.getOrThrow<string>('aws.dynamodbTableName');
+  get usersTableName(): string {
+    return this.configService.getOrThrow<string>('aws.usersTableName');
+  }
+
+  get medicationsTableName(): string {
+    return this.configService.getOrThrow<string>('aws.medicationsTableName');
+  }
+
+  get refreshTokensTableName(): string {
+    return this.configService.getOrThrow<string>('aws.refreshTokensTableName');
   }
 }

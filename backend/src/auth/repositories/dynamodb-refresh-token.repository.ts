@@ -1,21 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import {
-  GetCommand,
-  TransactWriteCommand,
-  UpdateCommand,
-} from '@aws-sdk/lib-dynamodb';
+import { GetCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { DynamoDbService } from '../../database/dynamodb/dynamodb.service';
 import {
   CreateRefreshTokenInput,
   RefreshTokenRecord,
   RefreshTokenRepository,
 } from './refresh-token.repository';
-
-interface RefreshTokenItem extends RefreshTokenRecord {
-  PK: string;
-  SK: 'METADATA';
-  entityType: 'REFRESH_TOKEN';
-}
 
 @Injectable()
 export class DynamoDbRefreshTokenRepository implements RefreshTokenRepository {
@@ -24,10 +14,7 @@ export class DynamoDbRefreshTokenRepository implements RefreshTokenRepository {
   constructor(private readonly dynamoDb: DynamoDbService) {}
 
   async create(input: CreateRefreshTokenInput): Promise<RefreshTokenRecord> {
-    const item: RefreshTokenItem = {
-      PK: this.tokenPk(input.tokenId),
-      SK: 'METADATA',
-      entityType: 'REFRESH_TOKEN',
+    const item: RefreshTokenRecord = {
       ...input,
       createdAt: Date.now(),
     };
@@ -36,30 +23,10 @@ export class DynamoDbRefreshTokenRepository implements RefreshTokenRepository {
 
     try {
       await this.dynamoDb.client.send(
-        new TransactWriteCommand({
-          TransactItems: [
-            {
-              Put: {
-                TableName: this.dynamoDb.tableName,
-                Item: item,
-                ConditionExpression: 'attribute_not_exists(PK)',
-              },
-            },
-            {
-              Update: {
-                TableName: this.dynamoDb.tableName,
-                Key: {
-                  PK: `USER#${input.userId}`,
-                  SK: 'PROFILE',
-                },
-                UpdateExpression: 'SET refreshTokenHash = :refreshTokenHash',
-                ExpressionAttributeValues: {
-                  ':refreshTokenHash': input.refreshTokenHash,
-                },
-                ConditionExpression: 'attribute_exists(PK)',
-              },
-            },
-          ],
+        new PutCommand({
+          TableName: this.dynamoDb.refreshTokensTableName,
+          Item: item,
+          ConditionExpression: 'attribute_not_exists(tokenId)',
         }),
       );
     } catch (error) {
@@ -76,13 +43,13 @@ export class DynamoDbRefreshTokenRepository implements RefreshTokenRepository {
     try {
       const result = await this.dynamoDb.client.send(
         new GetCommand({
-          TableName: this.dynamoDb.tableName,
-          Key: { PK: this.tokenPk(tokenId), SK: 'METADATA' },
+          TableName: this.dynamoDb.refreshTokensTableName,
+          Key: { tokenId },
           ConsistentRead: true,
         }),
       );
 
-      return (result.Item as RefreshTokenItem | undefined) ?? null;
+      return (result.Item as RefreshTokenRecord | undefined) ?? null;
     } catch (error) {
       this.logFailure('findByTokenId', error);
       throw error;
@@ -95,11 +62,11 @@ export class DynamoDbRefreshTokenRepository implements RefreshTokenRepository {
     try {
       await this.dynamoDb.client.send(
         new UpdateCommand({
-          TableName: this.dynamoDb.tableName,
-          Key: { PK: this.tokenPk(tokenId), SK: 'METADATA' },
+          TableName: this.dynamoDb.refreshTokensTableName,
+          Key: { tokenId },
           UpdateExpression: 'SET revokedAt = :revokedAt',
           ExpressionAttributeValues: { ':revokedAt': Date.now() },
-          ConditionExpression: 'attribute_exists(PK)',
+          ConditionExpression: 'attribute_exists(tokenId)',
         }),
       );
     } catch (error) {
@@ -113,10 +80,6 @@ export class DynamoDbRefreshTokenRepository implements RefreshTokenRepository {
       this.logFailure('revoke', error);
       throw error;
     }
-  }
-
-  private tokenPk(tokenId: string): string {
-    return `REFRESH_TOKEN#${tokenId}`;
   }
 
   private logFailure(operation: string, error: unknown): void {

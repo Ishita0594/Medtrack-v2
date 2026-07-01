@@ -12,7 +12,13 @@ export function validateEnvironment(
   const awsSecretAccessKey = config.AWS_SECRET_ACCESS_KEY
     ? String(config.AWS_SECRET_ACCESS_KEY)
     : undefined;
-  const dynamodbTableName = String(config.DYNAMODB_TABLE_NAME ?? 'MedTrack');
+  const usersTableName = String(config.DYNAMODB_USERS_TABLE_NAME ?? 'Users');
+  const medicationsTableName = String(
+    config.DYNAMODB_MEDICATIONS_TABLE_NAME ?? 'Medications',
+  );
+  const refreshTokensTableName = String(
+    config.DYNAMODB_REFRESH_TOKENS_TABLE_NAME ?? 'RefreshTokens',
+  );
   const jwtSecret = String(config.JWT_SECRET ?? 'change-me-in-production');
   const jwtAccessTokenExpiresIn = Number(
     config.JWT_ACCESS_TOKEN_EXPIRES_IN ?? 900,
@@ -37,8 +43,16 @@ export function validateEnvironment(
     );
   }
 
-  if (!dynamodbTableName.trim()) {
-    throw new Error('DYNAMODB_TABLE_NAME is required');
+  if (!usersTableName.trim()) {
+    throw new Error('DYNAMODB_USERS_TABLE_NAME is required');
+  }
+
+  if (!medicationsTableName.trim()) {
+    throw new Error('DYNAMODB_MEDICATIONS_TABLE_NAME is required');
+  }
+
+  if (!refreshTokensTableName.trim()) {
+    throw new Error('DYNAMODB_REFRESH_TOKENS_TABLE_NAME is required');
   }
 
   if (jwtSecret.length < 16) {
@@ -67,7 +81,9 @@ export function validateEnvironment(
     NODE_ENV: nodeEnv,
     PORT: String(port),
     AWS_REGION: awsRegion,
-    DYNAMODB_TABLE_NAME: dynamodbTableName,
+    DYNAMODB_USERS_TABLE_NAME: usersTableName,
+    DYNAMODB_MEDICATIONS_TABLE_NAME: medicationsTableName,
+    DYNAMODB_REFRESH_TOKENS_TABLE_NAME: refreshTokensTableName,
     JWT_SECRET: jwtSecret,
     JWT_ACCESS_TOKEN_EXPIRES_IN: String(jwtAccessTokenExpiresIn),
     BCRYPT_SALT_ROUNDS: String(bcryptSaltRounds),
