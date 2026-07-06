@@ -18,6 +18,9 @@ export default () => ({
       process.env.DYNAMODB_ADHERENCE_TABLE_NAME ?? 'AdherenceRecords',
     reminderEventsTableName:
       process.env.DYNAMODB_REMINDER_EVENTS_TABLE_NAME ?? 'ReminderEvents',
+    caregiverRelationshipsTableName:
+      process.env.DYNAMODB_CAREGIVER_RELATIONSHIPS_TABLE_NAME ??
+      'CaregiverRelationships',
   },
   jwt: {
     secret: process.env.JWT_SECRET ?? 'change-me-in-production',

@@ -108,6 +108,9 @@ async function main(): Promise<void> {
     const reminderEventsTableName = requiredEnvironment(
       'DYNAMODB_REMINDER_EVENTS_TABLE_NAME',
     );
+    const caregiverRelationshipsTableName = requiredEnvironment(
+      'DYNAMODB_CAREGIVER_RELATIONSHIPS_TABLE_NAME',
+    );
 
     console.log('Initializing DynamoDB tables');
 
@@ -180,6 +183,41 @@ async function main(): Promise<void> {
           KeySchema: [
             { AttributeName: 'status', KeyType: 'HASH' },
             { AttributeName: 'scheduledAt', KeyType: 'RANGE' },
+          ],
+          Projection: { ProjectionType: 'ALL' },
+        },
+      ],
+    });
+
+    await ensureTable(client, {
+      TableName: caregiverRelationshipsTableName,
+      BillingMode: 'PAY_PER_REQUEST',
+      AttributeDefinitions: [
+        { AttributeName: 'patientId', AttributeType: 'S' },
+        { AttributeName: 'relationshipId', AttributeType: 'S' },
+        { AttributeName: 'caregiverId', AttributeType: 'S' },
+        { AttributeName: 'caregiverEmail', AttributeType: 'S' },
+        { AttributeName: 'createdAt', AttributeType: 'N' },
+        { AttributeName: 'invitedAt', AttributeType: 'N' },
+      ],
+      KeySchema: [
+        { AttributeName: 'patientId', KeyType: 'HASH' },
+        { AttributeName: 'relationshipId', KeyType: 'RANGE' },
+      ],
+      GlobalSecondaryIndexes: [
+        {
+          IndexName: 'CaregiverRelationshipsByCaregiver',
+          KeySchema: [
+            { AttributeName: 'caregiverId', KeyType: 'HASH' },
+            { AttributeName: 'createdAt', KeyType: 'RANGE' },
+          ],
+          Projection: { ProjectionType: 'ALL' },
+        },
+        {
+          IndexName: 'CaregiverInvitesByEmail',
+          KeySchema: [
+            { AttributeName: 'caregiverEmail', KeyType: 'HASH' },
+            { AttributeName: 'invitedAt', KeyType: 'RANGE' },
           ],
           Projection: { ProjectionType: 'ALL' },
         },

@@ -25,6 +25,10 @@ export function validateEnvironment(
   const reminderEventsTableName = String(
     config.DYNAMODB_REMINDER_EVENTS_TABLE_NAME ?? 'ReminderEvents',
   );
+  const caregiverRelationshipsTableName = String(
+    config.DYNAMODB_CAREGIVER_RELATIONSHIPS_TABLE_NAME ??
+      'CaregiverRelationships',
+  );
   const jwtSecret = String(config.JWT_SECRET ?? 'change-me-in-production');
   const jwtAccessTokenExpiresIn = Number(
     config.JWT_ACCESS_TOKEN_EXPIRES_IN ?? 900,
@@ -69,6 +73,10 @@ export function validateEnvironment(
     throw new Error('DYNAMODB_REMINDER_EVENTS_TABLE_NAME is required');
   }
 
+  if (!caregiverRelationshipsTableName.trim()) {
+    throw new Error('DYNAMODB_CAREGIVER_RELATIONSHIPS_TABLE_NAME is required');
+  }
+
   if (jwtSecret.length < 16) {
     throw new Error('JWT_SECRET must be at least 16 characters long');
   }
@@ -100,6 +108,8 @@ export function validateEnvironment(
     DYNAMODB_REFRESH_TOKENS_TABLE_NAME: refreshTokensTableName,
     DYNAMODB_ADHERENCE_TABLE_NAME: adherenceTableName,
     DYNAMODB_REMINDER_EVENTS_TABLE_NAME: reminderEventsTableName,
+    DYNAMODB_CAREGIVER_RELATIONSHIPS_TABLE_NAME:
+      caregiverRelationshipsTableName,
     JWT_SECRET: jwtSecret,
     JWT_ACCESS_TOKEN_EXPIRES_IN: String(jwtAccessTokenExpiresIn),
     BCRYPT_SALT_ROUNDS: String(bcryptSaltRounds),

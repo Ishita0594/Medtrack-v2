@@ -34,4 +34,10 @@ export class DynamoDbService {
   get reminderEventsTableName(): string {
     return this.configService.getOrThrow<string>('aws.reminderEventsTableName');
   }
+
+  get caregiverRelationshipsTableName(): string {
+    return this.configService.getOrThrow<string>(
+      'aws.caregiverRelationshipsTableName',
+    );
+  }
 }
