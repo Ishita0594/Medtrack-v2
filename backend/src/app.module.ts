@@ -13,6 +13,7 @@ import { AdherenceModule } from './adherence/adherence.module';
 import { CaregiversModule } from './caregivers/caregivers.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { RemindersModule } from './reminders/reminders.module';
+import { PrescriptionsModule } from './prescriptions/prescriptions.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { RemindersModule } from './reminders/reminders.module';
     CaregiversModule,
     NotificationsModule,
     RemindersModule,
+    PrescriptionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

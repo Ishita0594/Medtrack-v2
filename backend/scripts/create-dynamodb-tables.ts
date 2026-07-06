@@ -111,6 +111,9 @@ async function main(): Promise<void> {
     const caregiverRelationshipsTableName = requiredEnvironment(
       'DYNAMODB_CAREGIVER_RELATIONSHIPS_TABLE_NAME',
     );
+    const prescriptionUploadsTableName = requiredEnvironment(
+      'DYNAMODB_PRESCRIPTION_UPLOADS_TABLE_NAME',
+    );
 
     console.log('Initializing DynamoDB tables');
 
@@ -221,6 +224,19 @@ async function main(): Promise<void> {
           ],
           Projection: { ProjectionType: 'ALL' },
         },
+      ],
+    });
+
+    await ensureTable(client, {
+      TableName: prescriptionUploadsTableName,
+      BillingMode: 'PAY_PER_REQUEST',
+      AttributeDefinitions: [
+        { AttributeName: 'userId', AttributeType: 'S' },
+        { AttributeName: 'prescriptionId', AttributeType: 'S' },
+      ],
+      KeySchema: [
+        { AttributeName: 'userId', KeyType: 'HASH' },
+        { AttributeName: 'prescriptionId', KeyType: 'RANGE' },
       ],
     });
 

@@ -29,6 +29,17 @@ export function validateEnvironment(
     config.DYNAMODB_CAREGIVER_RELATIONSHIPS_TABLE_NAME ??
       'CaregiverRelationships',
   );
+  const prescriptionUploadsTableName = String(
+    config.DYNAMODB_PRESCRIPTION_UPLOADS_TABLE_NAME ?? 'PrescriptionUploads',
+  );
+  const prescriptionStorageProvider = String(
+    config.PRESCRIPTION_STORAGE_PROVIDER ?? 'LOCAL',
+  );
+  const ocrProvider = String(config.OCR_PROVIDER ?? 'MOCK');
+  const aiParserProvider = String(config.AI_PARSER_PROVIDER ?? 'MOCK');
+  const prescriptionUploadDir = String(
+    config.PRESCRIPTION_UPLOAD_DIR ?? 'uploads/prescriptions',
+  );
   const jwtSecret = String(config.JWT_SECRET ?? 'change-me-in-production');
   const jwtAccessTokenExpiresIn = Number(
     config.JWT_ACCESS_TOKEN_EXPIRES_IN ?? 900,
@@ -77,6 +88,26 @@ export function validateEnvironment(
     throw new Error('DYNAMODB_CAREGIVER_RELATIONSHIPS_TABLE_NAME is required');
   }
 
+  if (!prescriptionUploadsTableName.trim()) {
+    throw new Error('DYNAMODB_PRESCRIPTION_UPLOADS_TABLE_NAME is required');
+  }
+
+  if (prescriptionStorageProvider !== 'LOCAL') {
+    throw new Error('PRESCRIPTION_STORAGE_PROVIDER must currently be LOCAL');
+  }
+
+  if (ocrProvider !== 'MOCK') {
+    throw new Error('OCR_PROVIDER must currently be MOCK');
+  }
+
+  if (aiParserProvider !== 'MOCK') {
+    throw new Error('AI_PARSER_PROVIDER must currently be MOCK');
+  }
+
+  if (!prescriptionUploadDir.trim()) {
+    throw new Error('PRESCRIPTION_UPLOAD_DIR is required');
+  }
+
   if (jwtSecret.length < 16) {
     throw new Error('JWT_SECRET must be at least 16 characters long');
   }
@@ -110,6 +141,11 @@ export function validateEnvironment(
     DYNAMODB_REMINDER_EVENTS_TABLE_NAME: reminderEventsTableName,
     DYNAMODB_CAREGIVER_RELATIONSHIPS_TABLE_NAME:
       caregiverRelationshipsTableName,
+    DYNAMODB_PRESCRIPTION_UPLOADS_TABLE_NAME: prescriptionUploadsTableName,
+    PRESCRIPTION_STORAGE_PROVIDER: prescriptionStorageProvider,
+    OCR_PROVIDER: ocrProvider,
+    AI_PARSER_PROVIDER: aiParserProvider,
+    PRESCRIPTION_UPLOAD_DIR: prescriptionUploadDir,
     JWT_SECRET: jwtSecret,
     JWT_ACCESS_TOKEN_EXPIRES_IN: String(jwtAccessTokenExpiresIn),
     BCRYPT_SALT_ROUNDS: String(bcryptSaltRounds),

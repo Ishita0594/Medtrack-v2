@@ -21,6 +21,15 @@ export default () => ({
     caregiverRelationshipsTableName:
       process.env.DYNAMODB_CAREGIVER_RELATIONSHIPS_TABLE_NAME ??
       'CaregiverRelationships',
+    prescriptionUploadsTableName:
+      process.env.DYNAMODB_PRESCRIPTION_UPLOADS_TABLE_NAME ??
+      'PrescriptionUploads',
+  },
+  prescriptions: {
+    storageProvider: process.env.PRESCRIPTION_STORAGE_PROVIDER ?? 'LOCAL',
+    ocrProvider: process.env.OCR_PROVIDER ?? 'MOCK',
+    aiParserProvider: process.env.AI_PARSER_PROVIDER ?? 'MOCK',
+    uploadDir: process.env.PRESCRIPTION_UPLOAD_DIR ?? 'uploads/prescriptions',
   },
   jwt: {
     secret: process.env.JWT_SECRET ?? 'change-me-in-production',

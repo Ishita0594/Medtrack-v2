@@ -40,4 +40,10 @@ export class DynamoDbService {
       'aws.caregiverRelationshipsTableName',
     );
   }
+
+  get prescriptionUploadsTableName(): string {
+    return this.configService.getOrThrow<string>(
+      'aws.prescriptionUploadsTableName',
+    );
+  }
 }
