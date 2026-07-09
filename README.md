@@ -209,7 +209,6 @@ Add screenshots here before publishing:
 
 ## Future Improvements
 
-- Real email provider for notifications and caregiver invitations
 - Real OCR provider such as AWS Textract
 - Real AI parser using a production LLM workflow
 - S3 storage for prescription files
@@ -226,3 +225,28 @@ Add screenshots here before publishing:
 - DynamoDB design with separate tables, GSIs, and script-based table initialization
 - Provider-based architecture for OCR, AI parsing, notification delivery, and file storage
 - Role-aware frontend with protected routes, typed Axios clients, and responsive Bootstrap UI
+
+## Email Notifications
+
+MedTrack supports configurable notification delivery:
+
+- `EMAIL_PROVIDER=MOCK`: default for development. The app logs safe delivery intent only.
+- `EMAIL_PROVIDER=SMTP`: sends real email through Nodemailer.
+
+SMTP variables:
+
+```env
+EMAIL_PROVIDER=SMTP
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-gmail-app-password
+EMAIL_FROM="MedTrack <your-email@gmail.com>"
+```
+
+For Gmail, use an app password, not your normal Gmail password. Never commit SMTP credentials.
+
+Caregiver invitation emails are sent after `POST /caregivers/invite` creates the invitation. If email sending fails, the invite is still saved and the failure is logged safely.
+
+Reminder emails are sent by the reminder scheduler for due reminders with `notificationType=EMAIL`. If delivery fails, the scheduler logs safely, avoids crashing, and leaves the reminder pending for a later run.

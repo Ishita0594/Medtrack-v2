@@ -79,7 +79,12 @@ The current OCR and AI providers are mock providers. This keeps the project dete
 
 Reminder events are stored with status and scheduled time. The scheduler periodically queries due pending reminders through the scheduled-time GSI, claims them safely, and sends notifications through the notification provider.
 
-The current notification implementation is a mock logger. A real provider can be plugged in later without changing reminder routes.
+Notification delivery is provider-based:
+
+- `EMAIL_PROVIDER=MOCK` logs safe delivery intent for local development.
+- `EMAIL_PROVIDER=SMTP` sends real email through Nodemailer.
+
+For due reminders with `notificationType=EMAIL`, the notification service builds a medication reminder email, looks up the user's email address, and sends through the configured provider. Email failures are caught and logged safely so the scheduler does not crash.
 
 ## Caregiver Access Control
 
@@ -99,15 +104,35 @@ Mock providers are used for:
 
 - OCR
 - AI prescription parsing
-- Notification delivery
+- Notification delivery when `EMAIL_PROVIDER=MOCK`
 - Local prescription storage
 
 They make local development reliable and inexpensive while preserving clear extension points:
 
 - Replace mock OCR with AWS Textract or another OCR API.
 - Replace mock AI parser with a production LLM parser.
-- Replace mock notifications with email/SMS/push.
+- Use `EMAIL_PROVIDER=SMTP` for real email, or add SMS/push providers later.
 - Replace local storage with S3.
+
+## SMTP Email Flow
+
+Caregiver invitations:
+
+1. A patient calls `POST /caregivers/invite`.
+2. The relationship is saved first.
+3. The notification service renders a caregiver invitation email.
+4. The configured provider sends or mocks the email.
+5. Delivery errors are logged without failing the API response.
+
+Reminder emails:
+
+1. A reminder is created with `notificationType=EMAIL`.
+2. The scheduler finds due pending reminders.
+3. The notification service renders a medication reminder email.
+4. SMTP sends the email when configured.
+5. If delivery fails, the scheduler logs safely and leaves the reminder pending.
+
+When using Gmail SMTP, create a Gmail app password and store it as `SMTP_PASS`. Do not use or commit a personal Gmail password.
 
 ## Plug-in Points for Real Providers
 
