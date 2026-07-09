@@ -258,6 +258,10 @@ export function CaregiversPage() {
           <div className="card">
             <div className="card-body">
               <h2 className="h5 mb-3">Invite caregiver</h2>
+              <div className="alert alert-info small">
+                Invitation email will be sent if email notifications are
+                configured.
+              </div>
               <form onSubmit={handleInvite}>
                 <div className="mb-3">
                   <label className="form-label" htmlFor="caregiverEmail">
