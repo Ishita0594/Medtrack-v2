@@ -24,6 +24,14 @@ function parseJwtExpiresInSeconds(value: string | undefined): number {
   return amount * multipliers[unit];
 }
 
+function parseBoolean(value: string | undefined, defaultValue: boolean): boolean {
+  if (value === undefined) {
+    return defaultValue;
+  }
+
+  return value.toLowerCase() === 'true';
+}
+
 export default () => ({
   app: {
     environment: process.env.NODE_ENV ?? 'development',
@@ -56,6 +64,17 @@ export default () => ({
     ocrProvider: process.env.OCR_PROVIDER ?? 'MOCK',
     aiParserProvider: process.env.AI_PARSER_PROVIDER ?? 'MOCK',
     uploadDir: process.env.PRESCRIPTION_UPLOAD_DIR ?? 'uploads/prescriptions',
+  },
+  email: {
+    provider: process.env.EMAIL_PROVIDER ?? 'MOCK',
+    smtp: {
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT ?? 587),
+      secure: parseBoolean(process.env.SMTP_SECURE, false),
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+      from: process.env.EMAIL_FROM ?? 'MedTrack <no-reply@example.com>',
+    },
   },
   jwt: {
     secret: process.env.JWT_SECRET ?? 'change-me-in-production',

@@ -1,4 +1,5 @@
 const allowedNodeEnvs = ['development', 'test', 'staging', 'production'];
+const allowedEmailProviders = ['MOCK', 'SMTP'];
 
 function parseDurationSeconds(value: string): number {
   const numericValue = Number(value);
@@ -65,6 +66,15 @@ export function validateEnvironment(
   const prescriptionUploadDir = String(
     config.PRESCRIPTION_UPLOAD_DIR ?? 'uploads/prescriptions',
   );
+  const emailProvider = String(config.EMAIL_PROVIDER ?? 'MOCK');
+  const smtpHost = config.SMTP_HOST ? String(config.SMTP_HOST) : undefined;
+  const smtpPort = Number(config.SMTP_PORT ?? 587);
+  const smtpSecure = String(config.SMTP_SECURE ?? 'false');
+  const smtpUser = config.SMTP_USER ? String(config.SMTP_USER) : undefined;
+  const smtpPass = config.SMTP_PASS ? String(config.SMTP_PASS) : undefined;
+  const emailFrom = config.EMAIL_FROM
+    ? String(config.EMAIL_FROM)
+    : 'MedTrack <no-reply@example.com>';
   const jwtSecret = String(config.JWT_SECRET ?? 'change-me-in-production');
   const jwtExpiresIn = String(
     config.JWT_EXPIRES_IN ?? config.JWT_ACCESS_TOKEN_EXPIRES_IN ?? '900',
@@ -134,6 +144,38 @@ export function validateEnvironment(
     throw new Error('PRESCRIPTION_UPLOAD_DIR is required');
   }
 
+  if (!allowedEmailProviders.includes(emailProvider)) {
+    throw new Error(
+      `EMAIL_PROVIDER must be one of: ${allowedEmailProviders.join(', ')}`,
+    );
+  }
+
+  if (!['true', 'false'].includes(smtpSecure.toLowerCase())) {
+    throw new Error('SMTP_SECURE must be true or false');
+  }
+
+  if (!Number.isInteger(smtpPort) || smtpPort < 1 || smtpPort > 65535) {
+    throw new Error('SMTP_PORT must be an integer between 1 and 65535');
+  }
+
+  if (emailProvider === 'SMTP') {
+    if (!smtpHost?.trim()) {
+      throw new Error('SMTP_HOST is required when EMAIL_PROVIDER=SMTP');
+    }
+
+    if (!smtpUser?.trim()) {
+      throw new Error('SMTP_USER is required when EMAIL_PROVIDER=SMTP');
+    }
+
+    if (!smtpPass?.trim()) {
+      throw new Error('SMTP_PASS is required when EMAIL_PROVIDER=SMTP');
+    }
+
+    if (!emailFrom.trim()) {
+      throw new Error('EMAIL_FROM is required when EMAIL_PROVIDER=SMTP');
+    }
+  }
+
   if (jwtSecret.length < 16) {
     throw new Error('JWT_SECRET must be at least 16 characters long');
   }
@@ -172,6 +214,13 @@ export function validateEnvironment(
     OCR_PROVIDER: ocrProvider,
     AI_PARSER_PROVIDER: aiParserProvider,
     PRESCRIPTION_UPLOAD_DIR: prescriptionUploadDir,
+    EMAIL_PROVIDER: emailProvider,
+    SMTP_HOST: smtpHost,
+    SMTP_PORT: String(smtpPort),
+    SMTP_SECURE: smtpSecure,
+    SMTP_USER: smtpUser,
+    SMTP_PASS: smtpPass,
+    EMAIL_FROM: emailFrom,
     JWT_SECRET: jwtSecret,
     JWT_EXPIRES_IN: jwtExpiresIn,
     JWT_ACCESS_TOKEN_EXPIRES_IN: String(jwtAccessTokenExpiresIn),

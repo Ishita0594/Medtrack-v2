@@ -86,6 +86,25 @@ describe('CaregiversService', () => {
     );
   });
 
+  it('creates an invite even when notification delivery fails', async () => {
+    repository.findAllByPatientId.mockResolvedValue([]);
+    repository.create.mockResolvedValue(pendingRelationship);
+    notificationsService.sendCaregiverInvite.mockRejectedValue(
+      new Error('smtp unavailable'),
+    );
+
+    await expect(
+      service.invite(patientId, UserRole.PATIENT, {
+        caregiverEmail,
+        relationshipType: CaregiverRelationshipType.PARENT,
+      }),
+    ).resolves.toMatchObject({
+      relationshipId,
+      caregiverEmail,
+      status: CaregiverRelationshipStatus.PENDING,
+    });
+  });
+
   it('rejects a duplicate pending invitation', async () => {
     repository.findAllByPatientId.mockResolvedValue([pendingRelationship]);
 

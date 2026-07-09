@@ -210,24 +210,51 @@ export class RemindersService {
     let sentCount = 0;
 
     for (const reminder of dueReminders) {
+      let claimedReminder: Reminder | null = null;
+
       try {
-        const claimed = await this.reminderRepository.claimAsSent(
+        claimedReminder = await this.reminderRepository.claimAsSent(
           reminder.userId,
           reminder.reminderId,
           now,
         );
 
-        if (!claimed) {
+        if (!claimedReminder) {
           continue;
         }
 
-        await this.notificationsService.sendReminder(claimed);
+        const sent = await this.notificationsService.sendReminder(
+          claimedReminder,
+        );
+
+        if (!sent) {
+          await this.reminderRepository.update(
+            reminder.userId,
+            reminder.reminderId,
+            {
+              status: ReminderStatus.PENDING,
+              clearSentAt: true,
+            },
+          );
+          continue;
+        }
+
         sentCount += 1;
       } catch (error) {
         const errorName = error instanceof Error ? error.name : 'UnknownError';
         this.logger.error(
           `Reminder dispatch failed for ${reminder.reminderId}: ${errorName}`,
         );
+        if (claimedReminder) {
+          await this.reminderRepository.update(
+            reminder.userId,
+            reminder.reminderId,
+            {
+              status: ReminderStatus.PENDING,
+              clearSentAt: true,
+            },
+          );
+        }
       }
     }
 

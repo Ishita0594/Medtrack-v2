@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { v7 as uuidv7 } from 'uuid';
 import { AdherenceService } from '../adherence/adherence.service';
 import { AdherenceResponseDto } from '../adherence/dto/adherence-response.dto';
@@ -25,6 +25,8 @@ import type {
 
 @Injectable()
 export class CaregiversService {
+  private readonly logger = new Logger(CaregiversService.name);
+
   constructor(
     @Inject(CAREGIVER_REPOSITORY)
     private readonly caregiverRepository: CaregiverRepository,
@@ -63,7 +65,14 @@ export class CaregiversService {
       invitedAt: now,
     });
 
-    await this.notificationsService.sendCaregiverInvite(relationship);
+    try {
+      await this.notificationsService.sendCaregiverInvite(relationship);
+    } catch (error) {
+      const errorName = error instanceof Error ? error.name : 'UnknownError';
+      this.logger.warn(
+        `Caregiver invite notification failed for ${relationship.relationshipId}: ${errorName}`,
+      );
+    }
 
     return CaregiverMapper.toResponse(relationship);
   }

@@ -131,6 +131,7 @@ describe('RemindersService', () => {
     };
     repository.findDuePending.mockResolvedValue([reminder]);
     repository.claimAsSent.mockResolvedValue(sentReminder);
+    notificationsService.sendReminder.mockResolvedValue(true);
 
     await expect(service.processDueReminders(1782400300000)).resolves.toBe(1);
     expect(repository.claimAsSent).toHaveBeenCalledWith(
@@ -141,5 +142,22 @@ describe('RemindersService', () => {
     expect(notificationsService.sendReminder).toHaveBeenCalledWith(
       sentReminder,
     );
+  });
+
+  it('does not crash when reminder notification delivery fails', async () => {
+    const sentReminder = {
+      ...reminder,
+      status: ReminderStatus.SENT,
+      sentAt: 1782400300000,
+    };
+    repository.findDuePending.mockResolvedValue([reminder]);
+    repository.claimAsSent.mockResolvedValue(sentReminder);
+    notificationsService.sendReminder.mockRejectedValue(new Error('smtp down'));
+    repository.update.mockResolvedValue({
+      ...reminder,
+      status: ReminderStatus.PENDING,
+    });
+
+    await expect(service.processDueReminders(1782400300000)).resolves.toBe(0);
   });
 });
