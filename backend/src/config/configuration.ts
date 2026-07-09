@@ -1,3 +1,29 @@
+function parseJwtExpiresInSeconds(value: string | undefined): number {
+  const rawValue = value ?? process.env.JWT_ACCESS_TOKEN_EXPIRES_IN ?? '900';
+  const numericValue = Number(rawValue);
+
+  if (Number.isInteger(numericValue)) {
+    return numericValue;
+  }
+
+  const match = rawValue.match(/^(\d+)([smhd])$/);
+
+  if (!match) {
+    return 900;
+  }
+
+  const amount = Number(match[1]);
+  const unit = match[2];
+  const multipliers: Record<string, number> = {
+    s: 1,
+    m: 60,
+    h: 60 * 60,
+    d: 24 * 60 * 60,
+  };
+
+  return amount * multipliers[unit];
+}
+
 export default () => ({
   app: {
     environment: process.env.NODE_ENV ?? 'development',
@@ -33,9 +59,7 @@ export default () => ({
   },
   jwt: {
     secret: process.env.JWT_SECRET ?? 'change-me-in-production',
-    accessTokenExpiresIn: Number(
-      process.env.JWT_ACCESS_TOKEN_EXPIRES_IN ?? 900,
-    ),
+    accessTokenExpiresIn: parseJwtExpiresInSeconds(process.env.JWT_EXPIRES_IN),
   },
   security: {
     bcryptSaltRounds: Number(process.env.BCRYPT_SALT_ROUNDS ?? 12),

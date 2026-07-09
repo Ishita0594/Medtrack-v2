@@ -16,6 +16,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const context = host.switchToHttp();
     const response = context.getResponse<Response>();
     const request = context.getRequest<Request>();
+    const path = request.path ?? request.url.split('?')[0];
     const status =
       exception instanceof HttpException
         ? exception.getStatus()
@@ -26,7 +27,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
       this.logger.error(
-        `${request.method} ${request.url} failed`,
+        `${request.method} ${path} failed`,
         exception instanceof Error ? exception.stack : String(exception),
       );
     }
@@ -34,7 +35,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     response.status(status).json({
       statusCode: status,
       timestamp: new Date().toISOString(),
-      path: request.url,
+      path,
       message,
     });
   }

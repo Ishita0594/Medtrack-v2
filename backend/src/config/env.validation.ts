@@ -1,5 +1,30 @@
 const allowedNodeEnvs = ['development', 'test', 'staging', 'production'];
 
+function parseDurationSeconds(value: string): number {
+  const numericValue = Number(value);
+
+  if (Number.isInteger(numericValue)) {
+    return numericValue;
+  }
+
+  const match = value.match(/^(\d+)([smhd])$/);
+
+  if (!match) {
+    return Number.NaN;
+  }
+
+  const amount = Number(match[1]);
+  const unit = match[2];
+  const multipliers: Record<string, number> = {
+    s: 1,
+    m: 60,
+    h: 60 * 60,
+    d: 24 * 60 * 60,
+  };
+
+  return amount * multipliers[unit];
+}
+
 export function validateEnvironment(
   config: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -41,9 +66,10 @@ export function validateEnvironment(
     config.PRESCRIPTION_UPLOAD_DIR ?? 'uploads/prescriptions',
   );
   const jwtSecret = String(config.JWT_SECRET ?? 'change-me-in-production');
-  const jwtAccessTokenExpiresIn = Number(
-    config.JWT_ACCESS_TOKEN_EXPIRES_IN ?? 900,
+  const jwtExpiresIn = String(
+    config.JWT_EXPIRES_IN ?? config.JWT_ACCESS_TOKEN_EXPIRES_IN ?? '900',
   );
+  const jwtAccessTokenExpiresIn = parseDurationSeconds(jwtExpiresIn);
   const bcryptSaltRounds = Number(config.BCRYPT_SALT_ROUNDS ?? 12);
 
   if (!allowedNodeEnvs.includes(nodeEnv)) {
@@ -117,7 +143,7 @@ export function validateEnvironment(
     jwtAccessTokenExpiresIn < 60
   ) {
     throw new Error(
-      'JWT_ACCESS_TOKEN_EXPIRES_IN must be an integer of at least 60 seconds',
+      'JWT_EXPIRES_IN must be at least 60 seconds, for example 900 or 15m',
     );
   }
 
@@ -147,6 +173,7 @@ export function validateEnvironment(
     AI_PARSER_PROVIDER: aiParserProvider,
     PRESCRIPTION_UPLOAD_DIR: prescriptionUploadDir,
     JWT_SECRET: jwtSecret,
+    JWT_EXPIRES_IN: jwtExpiresIn,
     JWT_ACCESS_TOKEN_EXPIRES_IN: String(jwtAccessTokenExpiresIn),
     BCRYPT_SALT_ROUNDS: String(bcryptSaltRounds),
   };
