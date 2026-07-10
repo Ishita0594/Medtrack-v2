@@ -66,6 +66,13 @@ export const caregiversApi = {
     return response.data;
   },
 
+  async getInvitations() {
+    const response = await axiosClient.get<CaregiverRelationship[]>(
+      '/caregivers/invitations',
+    );
+    return response.data;
+  },
+
   async patientMedications(patientId: string) {
     const response = await axiosClient.get<Medication[]>(
       `/caregivers/patients/${patientId}/medications`,

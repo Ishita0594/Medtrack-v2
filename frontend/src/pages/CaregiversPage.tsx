@@ -17,6 +17,7 @@ export function CaregiversPage() {
   const { user } = useAuth();
   const inviteFormRef = useRef<HTMLFormElement>(null);
   const [relationships, setRelationships] = useState<CaregiverRelationship[]>([]);
+  const [invitations, setInvitations] = useState<CaregiverRelationship[]>([]);
   const [patientMedications, setPatientMedications] = useState<Medication[]>([]);
   const [patientAdherence, setPatientAdherence] = useState<AdherenceRecord[]>([]);
   const [selectedPatientId, setSelectedPatientId] = useState('');
@@ -27,6 +28,7 @@ export function CaregiversPage() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [workingInvitationId, setWorkingInvitationId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -37,14 +39,24 @@ export function CaregiversPage() {
     setError(null);
 
     try {
-      const nextRelationships = isCaregiver
-        ? await caregiversApi.patients()
-        : await caregiversApi.list();
-      setRelationships(nextRelationships);
+      if (isCaregiver) {
+        const [nextInvitations, nextRelationships] = await Promise.all([
+          caregiversApi.getInvitations(),
+          caregiversApi.patients(),
+        ]);
 
-      if (isCaregiver && !selectedPatientId && nextRelationships[0]) {
-        setSelectedPatientId(nextRelationships[0].patientId);
+        setInvitations(nextInvitations);
+        setRelationships(nextRelationships);
+
+        if (!selectedPatientId && nextRelationships[0]) {
+          setSelectedPatientId(nextRelationships[0].patientId);
+        }
+
+        return;
       }
+
+      const nextRelationships = await caregiversApi.list();
+      setRelationships(nextRelationships);
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -105,6 +117,26 @@ export function CaregiversPage() {
     }
   }
 
+  async function runInvitationAction(
+    relationshipId: string,
+    action: () => Promise<unknown>,
+    message: string,
+  ) {
+    setWorkingInvitationId(relationshipId);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await action();
+      setSuccess(message);
+      await loadRelationships();
+    } catch (err) {
+      setError(getApiErrorMessage(err));
+    } finally {
+      setWorkingInvitationId(null);
+    }
+  }
+
   async function runRelationshipAction(action: () => Promise<unknown>, message: string) {
     setError(null);
     setSuccess(null);
@@ -141,13 +173,96 @@ export function CaregiversPage() {
         {success ? <div className="alert alert-success">{success}</div> : null}
 
         {loading ? (
-          <Loading label="Loading patients" />
-        ) : relationships.length === 0 ? (
-          <EmptyState
-            title="No connected patients"
-            message="Accepted invitations will appear in this workspace."
-          />
+          <Loading label="Loading caregiver workspace" />
         ) : (
+          <>
+            <div className="card mb-4">
+              <div className="card-body">
+                <h2 className="h5 mb-3">Pending invitations</h2>
+                {invitations.length === 0 ? (
+                  <p className="text-secondary mb-0">
+                    No pending caregiver invitations.
+                  </p>
+                ) : (
+                  <div className="table-responsive">
+                    <table className="table align-middle">
+                      <thead>
+                        <tr>
+                          <th>Patient ID</th>
+                          <th>Caregiver email</th>
+                          <th>Relationship</th>
+                          <th>Invited</th>
+                          <th>Status</th>
+                          <th className="text-end">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {invitations.map((invitation) => (
+                          <tr key={invitation.relationshipId}>
+                            <td>{invitation.patientId}</td>
+                            <td>{invitation.caregiverEmail}</td>
+                            <td>{invitation.relationshipType}</td>
+                            <td>{formatDateTime(invitation.invitedAt)}</td>
+                            <td>
+                              <span className="badge text-bg-light">
+                                {invitation.status}
+                              </span>
+                            </td>
+                            <td className="text-end">
+                              <div className="btn-group btn-group-sm">
+                                <button
+                                  className="btn btn-outline-success"
+                                  disabled={
+                                    workingInvitationId === invitation.relationshipId
+                                  }
+                                  onClick={() =>
+                                    void runInvitationAction(
+                                      invitation.relationshipId,
+                                      () =>
+                                        caregiversApi.accept(
+                                          invitation.relationshipId,
+                                        ),
+                                      'Caregiver invitation accepted',
+                                    )
+                                  }
+                                >
+                                  Accept
+                                </button>
+                                <button
+                                  className="btn btn-outline-danger"
+                                  disabled={
+                                    workingInvitationId === invitation.relationshipId
+                                  }
+                                  onClick={() =>
+                                    void runInvitationAction(
+                                      invitation.relationshipId,
+                                      () =>
+                                        caregiversApi.reject(
+                                          invitation.relationshipId,
+                                        ),
+                                      'Caregiver invitation rejected',
+                                    )
+                                  }
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {relationships.length === 0 ? (
+              <EmptyState
+                title="No connected patients"
+                message="Accepted invitations will appear in this workspace."
+              />
+            ) : (
           <div className="row g-4">
             <div className="col-lg-4">
               <div className="card">
@@ -239,6 +354,8 @@ export function CaregiversPage() {
               </div>
             </div>
           </div>
+            )}
+          </>
         )}
       </div>
     );
