@@ -35,11 +35,21 @@ function parseBoolean(
   return value.toLowerCase() === 'true';
 }
 
+function parseCorsOrigins(value: string | undefined): string[] {
+  const rawValue =
+    value ?? 'http://localhost:5173,http://127.0.0.1:5173';
+
+  return rawValue
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
 export default () => ({
   app: {
     environment: process.env.NODE_ENV ?? 'development',
     port: Number(process.env.PORT ?? 3000),
-    corsOrigin: process.env.CORS_ORIGIN ?? '*',
+    corsOrigin: parseCorsOrigins(process.env.CORS_ORIGIN),
   },
   aws: {
     region: process.env.AWS_REGION ?? 'ap-south-1',

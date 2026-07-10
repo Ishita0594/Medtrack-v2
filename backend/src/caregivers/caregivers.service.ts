@@ -229,6 +229,25 @@ export class CaregiversService {
     );
   }
 
+  async findInvitations(
+    caregiverEmail: string,
+    role: string,
+  ): Promise<CaregiverResponseDto[]> {
+    this.assertRole(role, UserRole.CAREGIVER);
+    const normalizedEmail = this.normalizeEmail(caregiverEmail);
+    const relationships =
+      await this.caregiverRepository.findAllByInviteEmail(normalizedEmail);
+
+    return CaregiverMapper.toResponseList(
+      relationships.filter(
+        (relationship) =>
+          this.normalizeEmail(relationship.caregiverEmail) ===
+            normalizedEmail &&
+          relationship.status === CaregiverRelationshipStatus.PENDING,
+      ),
+    );
+  }
+
   async findPatientMedications(
     caregiverId: string,
     role: string,
@@ -320,12 +339,16 @@ export class CaregiversService {
     caregiverEmail: string,
     relationshipId: string,
   ): Promise<CaregiverRelationship> {
+    const normalizedEmail = this.normalizeEmail(caregiverEmail);
     const relationship = await this.caregiverRepository.findByInviteEmailAndId(
-      this.normalizeEmail(caregiverEmail),
+      normalizedEmail,
       relationshipId,
     );
 
-    if (!relationship) {
+    if (
+      !relationship ||
+      this.normalizeEmail(relationship.caregiverEmail) !== normalizedEmail
+    ) {
       throw new CaregiverAccessDeniedException();
     }
 

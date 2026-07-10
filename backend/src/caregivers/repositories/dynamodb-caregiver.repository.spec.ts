@@ -40,4 +40,22 @@ describe('DynamoDbCaregiverRepository', () => {
       ':caregiverEmail': 'mother@test.com',
     });
   });
+
+  it('uses the email GSI to list caregiver invitations', async () => {
+    const send = jest.fn().mockResolvedValue({ Items: [] });
+    const repository = createRepository(send);
+
+    await repository.findAllByInviteEmail('MOTHER@TEST.COM');
+
+    const command = send.mock.calls[0][0] as QueryCommand;
+
+    expect(command).toBeInstanceOf(QueryCommand);
+    expect(command.input.IndexName).toBe('CaregiverInvitesByEmail');
+    expect(command.input.KeyConditionExpression).toBe(
+      'caregiverEmail = :caregiverEmail',
+    );
+    expect(command.input.ExpressionAttributeValues).toEqual({
+      ':caregiverEmail': 'mother@test.com',
+    });
+  });
 });

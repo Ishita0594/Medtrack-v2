@@ -44,6 +44,7 @@ describe('CaregiversService', () => {
       findAllByPatientId: jest.fn(),
       findByPatientAndId: jest.fn(),
       findByInviteEmailAndId: jest.fn(),
+      findAllByInviteEmail: jest.fn(),
       findAllByCaregiverId: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
@@ -116,6 +117,79 @@ describe('CaregiversService', () => {
     ).rejects.toBeInstanceOf(CaregiverInviteAlreadyExistsException);
   });
 
+  it('lets a caregiver list their pending invitations', async () => {
+    repository.findAllByInviteEmail.mockResolvedValue([pendingRelationship]);
+
+    await expect(
+      service.findInvitations('MOTHER@TEST.COM', UserRole.CAREGIVER),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        relationshipId,
+        caregiverEmail,
+        status: CaregiverRelationshipStatus.PENDING,
+      }),
+    ]);
+
+    expect(repository.findAllByInviteEmail).toHaveBeenCalledWith(caregiverEmail);
+  });
+
+  it('does not expose invitations for another caregiver email', async () => {
+    repository.findAllByInviteEmail.mockResolvedValue([
+      pendingRelationship,
+      {
+        ...pendingRelationship,
+        relationshipId: 'other-relationship-id',
+        caregiverEmail: 'other@test.com',
+      },
+    ]);
+
+    await expect(
+      service.findInvitations(caregiverEmail, UserRole.CAREGIVER),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        relationshipId,
+        caregiverEmail,
+      }),
+    ]);
+  });
+
+  it('denies the invitation inbox to patients', async () => {
+    await expect(
+      service.findInvitations(caregiverEmail, UserRole.PATIENT),
+    ).rejects.toBeInstanceOf(CaregiverAccessDeniedException);
+    expect(repository.findAllByInviteEmail).not.toHaveBeenCalled();
+  });
+
+  it('omits accepted rejected and cancelled invitations from pending inbox', async () => {
+    repository.findAllByInviteEmail.mockResolvedValue([
+      pendingRelationship,
+      {
+        ...pendingRelationship,
+        relationshipId: 'accepted-relationship-id',
+        status: CaregiverRelationshipStatus.ACCEPTED,
+      },
+      {
+        ...pendingRelationship,
+        relationshipId: 'rejected-relationship-id',
+        status: CaregiverRelationshipStatus.REJECTED,
+      },
+      {
+        ...pendingRelationship,
+        relationshipId: 'cancelled-relationship-id',
+        status: CaregiverRelationshipStatus.CANCELLED,
+      },
+    ]);
+
+    await expect(
+      service.findInvitations(caregiverEmail, UserRole.CAREGIVER),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        relationshipId,
+        status: CaregiverRelationshipStatus.PENDING,
+      }),
+    ]);
+  });
+
   it('binds an accepted invitation to the logged-in caregiver', async () => {
     jest.spyOn(Date, 'now').mockReturnValue(1782000300000);
     repository.findByInviteEmailAndId.mockResolvedValue(pendingRelationship);
@@ -139,6 +213,34 @@ describe('CaregiversService', () => {
       expect.objectContaining({
         caregiverId,
         status: CaregiverRelationshipStatus.ACCEPTED,
+        expectedStatus: CaregiverRelationshipStatus.PENDING,
+      }),
+    );
+  });
+
+  it('rejects an invitation from the returned relationship id', async () => {
+    jest.spyOn(Date, 'now').mockReturnValue(1782000300000);
+    repository.findByInviteEmailAndId.mockResolvedValue(pendingRelationship);
+    repository.update.mockResolvedValue({
+      ...pendingRelationship,
+      status: CaregiverRelationshipStatus.REJECTED,
+      rejectedAt: 1782000300000,
+    });
+
+    await expect(
+      service.reject(caregiverEmail, UserRole.CAREGIVER, relationshipId),
+    ).resolves.toMatchObject({
+      relationshipId,
+      status: CaregiverRelationshipStatus.REJECTED,
+      rejectedAt: 1782000300000,
+    });
+
+    expect(repository.update).toHaveBeenCalledWith(
+      patientId,
+      relationshipId,
+      expect.objectContaining({
+        status: CaregiverRelationshipStatus.REJECTED,
+        rejectedAt: 1782000300000,
         expectedStatus: CaregiverRelationshipStatus.PENDING,
       }),
     );

@@ -87,6 +87,24 @@ export class CaregiversController {
     );
   }
 
+  @Get('invitations')
+  @ApiOperation({
+    summary: 'List pending invitations for the authenticated caregiver email',
+  })
+  @ApiOkResponse({
+    description: 'Pending caregiver invitations retrieved',
+    type: CaregiverResponseDto,
+    isArray: true,
+  })
+  @ApiForbiddenResponse({ description: 'Caregiver role required' })
+  @ApiUnauthorizedResponse({ description: 'Authentication is required' })
+  findInvitations(@Req() request: Request) {
+    return this.caregiversService.findInvitations(
+      request.user!.email,
+      request.user!.role,
+    );
+  }
+
   @Get('patients')
   @ApiOperation({ summary: 'List accepted patients for a caregiver' })
   @ApiOkResponse({

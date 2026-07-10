@@ -77,19 +77,25 @@ export class DynamoDbCaregiverRepository implements CaregiverRepository {
     caregiverEmail: string,
     relationshipId: string,
   ): Promise<CaregiverRelationship | null> {
-    const relationships = await this.queryAll({
-      IndexName: DYNAMODB_INDEXES.caregiverInvitesByEmail,
-      KeyConditionExpression: 'caregiverEmail = :caregiverEmail',
-      ExpressionAttributeValues: {
-        ':caregiverEmail': this.normalizeEmail(caregiverEmail),
-      },
-    });
+    const relationships = await this.findAllByInviteEmail(caregiverEmail);
 
     return (
       relationships.find(
         (relationship) => relationship.relationshipId === relationshipId,
       ) ?? null
     );
+  }
+
+  async findAllByInviteEmail(
+    caregiverEmail: string,
+  ): Promise<CaregiverRelationship[]> {
+    return this.queryAll({
+      IndexName: DYNAMODB_INDEXES.caregiverInvitesByEmail,
+      KeyConditionExpression: 'caregiverEmail = :caregiverEmail',
+      ExpressionAttributeValues: {
+        ':caregiverEmail': this.normalizeEmail(caregiverEmail),
+      },
+    });
   }
 
   async findAllByCaregiverId(

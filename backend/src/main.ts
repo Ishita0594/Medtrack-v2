@@ -7,30 +7,28 @@ import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { RequestLoggingInterceptor } from './common/interceptors/request-logging.interceptor';
 
-function parseCorsOrigin(corsOrigin: string): string[] | boolean {
-  if (corsOrigin === '*') {
-    return true;
-  }
-
-  return corsOrigin
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean);
-}
+const requiredDevCorsOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+];
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
-  const corsOrigin = configService.get<string>('app.corsOrigin') ?? '*';
   const port = configService.get<number>('app.port') ?? 3000;
+  const configuredCorsOrigins =
+    configService.get<string[]>('app.corsOrigin') ?? [];
+  const corsOrigins = Array.from(
+    new Set([...configuredCorsOrigins, ...requiredDevCorsOrigins]),
+  );
 
- app.enableCors({
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-});
+  app.enableCors({
+    origin: corsOrigins,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({

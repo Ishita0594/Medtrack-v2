@@ -38,6 +38,7 @@ export interface CaregiverRepository {
     caregiverEmail: string,
     relationshipId: string,
   ): Promise<CaregiverRelationship | null>;
+  findAllByInviteEmail(caregiverEmail: string): Promise<CaregiverRelationship[]>;
   findAllByCaregiverId(caregiverId: string): Promise<CaregiverRelationship[]>;
   update(
     patientId: string,
