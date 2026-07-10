@@ -5,6 +5,6 @@ export interface ParsedMedication {
   dosage: string;
   frequency: MedicationFrequency;
   times: string[];
-  durationDays: number;
+  durationDays?: number;
   instructions?: string;
 }

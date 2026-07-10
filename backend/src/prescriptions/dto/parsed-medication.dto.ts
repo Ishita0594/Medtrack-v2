@@ -17,8 +17,8 @@ export class ParsedMedicationDto {
   @ApiProperty({ example: ['08:00', '20:00'], type: [String] })
   times: string[];
 
-  @ApiProperty({ example: 5 })
-  durationDays: number;
+  @ApiPropertyOptional({ example: 5 })
+  durationDays?: number;
 
   @ApiPropertyOptional({ example: 'Take after food' })
   instructions?: string;

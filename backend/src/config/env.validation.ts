@@ -1,5 +1,6 @@
 const allowedNodeEnvs = ['development', 'test', 'staging', 'production'];
 const allowedEmailProviders = ['MOCK', 'SMTP'];
+const allowedAiParserProviders = ['MOCK', 'OPENAI'];
 
 function parseDurationSeconds(value: string): number {
   const numericValue = Number(value);
@@ -66,6 +67,10 @@ export function validateEnvironment(
   const prescriptionUploadDir = String(
     config.PRESCRIPTION_UPLOAD_DIR ?? 'uploads/prescriptions',
   );
+  const openAiApiKey = config.OPENAI_API_KEY
+    ? String(config.OPENAI_API_KEY)
+    : undefined;
+  const openAiModel = String(config.OPENAI_MODEL ?? 'gpt-4o-mini');
   const emailProvider = String(config.EMAIL_PROVIDER ?? 'MOCK');
   const smtpHost = config.SMTP_HOST ? String(config.SMTP_HOST) : undefined;
   const smtpPort = Number(config.SMTP_PORT ?? 587);
@@ -136,8 +141,26 @@ export function validateEnvironment(
     throw new Error('OCR_PROVIDER must currently be MOCK');
   }
 
-  if (aiParserProvider !== 'MOCK') {
-    throw new Error('AI_PARSER_PROVIDER must currently be MOCK');
+  if (!allowedAiParserProviders.includes(aiParserProvider)) {
+    throw new Error(
+      `AI_PARSER_PROVIDER must be one of: ${allowedAiParserProviders.join(
+        ', ',
+      )}`,
+    );
+  }
+
+  if (aiParserProvider === 'OPENAI') {
+    if (!openAiApiKey?.trim() || openAiApiKey === 'YOUR_OPENAI_API_KEY') {
+      throw new Error(
+        'A real OPENAI_API_KEY is required when AI_PARSER_PROVIDER=OPENAI',
+      );
+    }
+
+    if (!openAiModel.trim()) {
+      throw new Error(
+        'OPENAI_MODEL is required when AI_PARSER_PROVIDER=OPENAI',
+      );
+    }
   }
 
   if (!prescriptionUploadDir.trim()) {
@@ -213,6 +236,8 @@ export function validateEnvironment(
     PRESCRIPTION_STORAGE_PROVIDER: prescriptionStorageProvider,
     OCR_PROVIDER: ocrProvider,
     AI_PARSER_PROVIDER: aiParserProvider,
+    OPENAI_API_KEY: openAiApiKey,
+    OPENAI_MODEL: openAiModel,
     PRESCRIPTION_UPLOAD_DIR: prescriptionUploadDir,
     EMAIL_PROVIDER: emailProvider,
     SMTP_HOST: smtpHost,

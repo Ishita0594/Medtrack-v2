@@ -25,12 +25,12 @@ async function bootstrap() {
   const corsOrigin = configService.get<string>('app.corsOrigin') ?? '*';
   const port = configService.get<number>('app.port') ?? 3000;
 
-  app.enableCors({
-    origin: parseCorsOrigin(corsOrigin),
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-  });
+ app.enableCors({
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+});
 
   app.useGlobalPipes(
     new ValidationPipe({

@@ -228,16 +228,25 @@ export class PrescriptionsService {
       ) {
         const parsed = parsedMedications[index];
         this.validateParsedMedication(parsed);
-        const medication = await this.medicationsService.create(userId, {
+        const medicationInput = {
           name: parsed.name,
           dosage: parsed.dosage,
           frequency: parsed.frequency,
           times: parsed.times,
           startDate: medicationStartDate,
-          endDate:
-            medicationStartDate + parsed.durationDays * DAY_IN_MILLISECONDS,
           instructions: parsed.instructions,
-        });
+          ...(parsed.durationDays
+            ? {
+                endDate:
+                  medicationStartDate +
+                  parsed.durationDays * DAY_IN_MILLISECONDS,
+              }
+            : {}),
+        };
+        const medication = await this.medicationsService.create(
+          userId,
+          medicationInput,
+        );
         createdMedicationIds.push(medication.medicationId);
 
         const progress = await this.prescriptionRepository.update(
@@ -337,8 +346,12 @@ export class PrescriptionsService {
       !medication.name.trim() ||
       !medication.dosage.trim() ||
       medication.times.length === 0 ||
-      !Number.isInteger(medication.durationDays) ||
-      medication.durationDays <= 0
+      medication.times.some(
+        (time) => !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time),
+      ) ||
+      (medication.durationDays !== undefined &&
+        (!Number.isInteger(medication.durationDays) ||
+          medication.durationDays <= 0))
     ) {
       throw new PrescriptionProcessingException();
     }

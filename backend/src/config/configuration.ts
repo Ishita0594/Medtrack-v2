@@ -24,7 +24,10 @@ function parseJwtExpiresInSeconds(value: string | undefined): number {
   return amount * multipliers[unit];
 }
 
-function parseBoolean(value: string | undefined, defaultValue: boolean): boolean {
+function parseBoolean(
+  value: string | undefined,
+  defaultValue: boolean,
+): boolean {
   if (value === undefined) {
     return defaultValue;
   }
@@ -64,6 +67,10 @@ export default () => ({
     ocrProvider: process.env.OCR_PROVIDER ?? 'MOCK',
     aiParserProvider: process.env.AI_PARSER_PROVIDER ?? 'MOCK',
     uploadDir: process.env.PRESCRIPTION_UPLOAD_DIR ?? 'uploads/prescriptions',
+  },
+  openai: {
+    apiKey: process.env.OPENAI_API_KEY,
+    model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
   },
   email: {
     provider: process.env.EMAIL_PROVIDER ?? 'MOCK',

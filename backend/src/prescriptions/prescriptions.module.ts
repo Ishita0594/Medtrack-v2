@@ -5,6 +5,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { DynamoDbModule } from '../database/dynamodb/dynamodb.module';
 import { MedicationsModule } from '../medications/medications.module';
 import { MockPrescriptionAiParserService } from './ai/mock-prescription-ai-parser.service';
+import { OpenAiPrescriptionAiParserService } from './ai/openai-prescription-ai-parser.service';
 import { PRESCRIPTION_AI_PARSER } from './ai/prescription-ai-parser.interface';
 import { MockOcrProviderService } from './ocr/mock-ocr-provider.service';
 import { OCR_PROVIDER } from './ocr/ocr-provider.interface';
@@ -43,9 +44,26 @@ import { PRESCRIPTION_STORAGE } from './storage/prescription-storage.interface';
       provide: OCR_PROVIDER,
       useClass: MockOcrProviderService,
     },
+    MockPrescriptionAiParserService,
+    OpenAiPrescriptionAiParserService,
     {
       provide: PRESCRIPTION_AI_PARSER,
-      useClass: MockPrescriptionAiParserService,
+      inject: [
+        ConfigService,
+        MockPrescriptionAiParserService,
+        OpenAiPrescriptionAiParserService,
+      ],
+      useFactory: (
+        configService: ConfigService,
+        mockParser: MockPrescriptionAiParserService,
+        openAiParser: OpenAiPrescriptionAiParserService,
+      ) => {
+        const provider = configService.get<string>(
+          'prescriptions.aiParserProvider',
+        );
+
+        return provider === 'OPENAI' ? openAiParser : mockParser;
+      },
     },
   ],
   exports: [PrescriptionsService],
