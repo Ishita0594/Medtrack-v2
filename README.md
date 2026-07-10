@@ -2,6 +2,7 @@
 
 MedTrack is a full-stack medication management platform for patients and caregivers. It combines medication schedules, adherence tracking, reminders, caregiver access, and prescription upload processing in one dashboard.
 
+
 ## Problem Statement
 
 Many patients manage medications across handwritten prescriptions, alarms, family reminders, and manual notes. This creates missed doses, poor visibility for caregivers, and extra work when prescriptions change. MedTrack centralizes those workflows so patients can track medication routines and caregivers can monitor care with controlled access.
@@ -22,23 +23,13 @@ Many patients manage medications across handwritten prescriptions, alarms, famil
 
 ## Tech Stack
 
-Backend:
-- NestJS
-- TypeScript
-- AWS SDK v3
-- Amazon DynamoDB
-- JWT
-- bcrypt
-- Swagger
-- Jest
-
-Frontend:
-- React
-- TypeScript
-- Vite
-- Bootstrap 5
-- React Router DOM
-- Axios
+Frontend: React, TypeScript, Vite, Bootstrap, Axios
+Backend: NestJS, TypeScript
+Database: AWS DynamoDB
+Authentication: JWT, bcrypt
+AI: OpenAI provider integration with mock fallback
+Notifications: Mock/SMTP provider architecture
+Testing: Jest
 
 ## Architecture Overview
 
@@ -48,6 +39,24 @@ The project is split into two applications:
 - `frontend`: React SPA with typed API clients, authentication context, protected routing, and dashboard pages.
 
 The backend uses a repository pattern so services depend on interfaces rather than DynamoDB directly. This keeps controllers and services stable while persistence can evolve.
+React Frontend
+      ↓
+NestJS REST API
+      ↓
+Services / Repository Layer
+      ↓
+AWS DynamoDB
+
+For prescription processing:
+Prescription Upload
+      ↓
+OCR Provider
+      ↓
+AI Parser
+      ↓
+Validated Medication Data
+      ↓
+Medication Creation
 
 ## Backend Modules
 
