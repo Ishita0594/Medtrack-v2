@@ -197,6 +197,8 @@ export function RemindersPage() {
             <EmptyState
               title="No reminders"
               message="Create reminders for scheduled medications."
+              actionLabel="Add reminder"
+              onAction={openCreate}
             />
           ) : (
             <div className="table-responsive">

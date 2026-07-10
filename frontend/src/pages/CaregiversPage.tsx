@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { caregiversApi } from '../api/caregiversApi';
 import { getApiErrorMessage } from '../api/axiosClient';
 import { useAuth } from '../auth/AuthContext';
@@ -15,6 +15,7 @@ import { formatDateTime } from '../utils/date';
 
 export function CaregiversPage() {
   const { user } = useAuth();
+  const inviteFormRef = useRef<HTMLFormElement>(null);
   const [relationships, setRelationships] = useState<CaregiverRelationship[]>([]);
   const [patientMedications, setPatientMedications] = useState<Medication[]>([]);
   const [patientAdherence, setPatientAdherence] = useState<AdherenceRecord[]>([]);
@@ -262,7 +263,7 @@ export function CaregiversPage() {
                 Invitation email will be sent if email notifications are
                 configured.
               </div>
-              <form onSubmit={handleInvite}>
+              <form ref={inviteFormRef} onSubmit={handleInvite}>
                 <div className="mb-3">
                   <label className="form-label" htmlFor="caregiverEmail">
                     Email
@@ -332,6 +333,8 @@ export function CaregiversPage() {
                 <EmptyState
                   title="No caregiver relationships"
                   message="Invitations and accepted caregivers will appear here."
+                  actionLabel="Send invitation"
+                  onAction={() => inviteFormRef.current?.requestSubmit()}
                 />
               ) : (
                 <div className="table-responsive">

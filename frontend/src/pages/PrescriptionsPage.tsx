@@ -174,6 +174,8 @@ export function PrescriptionsPage() {
             <EmptyState
               title="No prescriptions"
               message="Upload a prescription image or PDF to begin processing."
+              actionLabel="Upload prescription"
+              onAction={handleUpload}
             />
           ) : (
             <div className="table-responsive">

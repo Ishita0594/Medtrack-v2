@@ -155,6 +155,8 @@ export function MedicationsPage() {
             <EmptyState
               title="No medications yet"
               message="Create the first medication schedule for this account."
+              actionLabel="Add medication"
+              onAction={openCreate}
             />
           ) : (
             <div className="table-responsive">

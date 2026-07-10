@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { adherenceApi } from '../api/adherenceApi';
 import { getApiErrorMessage } from '../api/axiosClient';
 import { medicationsApi } from '../api/medicationsApi';
@@ -16,6 +16,7 @@ import type { Medication } from '../types/medication';
 import { formatDateTime, fromDateTimeInput, toDateTimeInput } from '../utils/date';
 
 export function AdherencePage() {
+  const createFormRef = useRef<HTMLFormElement>(null);
   const [records, setRecords] = useState<AdherenceRecord[]>([]);
   const [stats, setStats] = useState<AdherenceStats | null>(null);
   const [medications, setMedications] = useState<Medication[]>([]);
@@ -177,7 +178,7 @@ export function AdherencePage() {
           <div className="card">
             <div className="card-body">
               <h2 className="h5 mb-3">Create record</h2>
-              <form onSubmit={handleCreate}>
+              <form ref={createFormRef} onSubmit={handleCreate}>
                 <div className="mb-3">
                   <label className="form-label" htmlFor="adherenceMedication">
                     Medication
@@ -278,6 +279,8 @@ export function AdherencePage() {
                 <EmptyState
                   title="No adherence records"
                   message="Create dose records after medications are available."
+                  actionLabel="Create record"
+                  onAction={() => createFormRef.current?.requestSubmit()}
                 />
               ) : (
                 <div className="table-responsive">
