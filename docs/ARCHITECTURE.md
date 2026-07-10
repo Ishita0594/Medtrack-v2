@@ -73,7 +73,12 @@ Internal fields such as password hashes and database keys are not returned.
 8. Medication service creates medication records.
 9. Prescription status becomes `PROCESSED` with created medication IDs.
 
-The current OCR and AI providers are mock providers. This keeps the project deterministic and reviewable without requiring paid services.
+The OCR provider is currently mocked. AI parsing is provider-based:
+
+- `AI_PARSER_PROVIDER=MOCK` uses deterministic sample output.
+- `AI_PARSER_PROVIDER=OPENAI` uses the official OpenAI SDK with structured JSON output.
+
+The OpenAI parser asks for `{ "medications": [...] }`, validates the JSON shape, validates medication names, dosage defaults, frequency enums, HH:mm times, and optional positive `durationDays`, then passes only sanitized records to medication creation. Raw LLM output and provider errors are not exposed in API responses or logs.
 
 ## Reminder Scheduler Flow
 
@@ -103,14 +108,14 @@ This avoids exposing patient data by user ID alone.
 Mock providers are used for:
 
 - OCR
-- AI prescription parsing
+- AI prescription parsing when `AI_PARSER_PROVIDER=MOCK`
 - Notification delivery when `EMAIL_PROVIDER=MOCK`
 - Local prescription storage
 
 They make local development reliable and inexpensive while preserving clear extension points:
 
 - Replace mock OCR with AWS Textract or another OCR API.
-- Replace mock AI parser with a production LLM parser.
+- Use `AI_PARSER_PROVIDER=OPENAI` for real LLM prescription parsing.
 - Use `EMAIL_PROVIDER=SMTP` for real email, or add SMS/push providers later.
 - Replace local storage with S3.
 

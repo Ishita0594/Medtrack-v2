@@ -14,7 +14,7 @@ Many patients manage medications across handwritten prescriptions, alarms, famil
 - Adherence records and adherence statistics
 - Reminder events with scheduler-ready status transitions
 - Caregiver invitation, acceptance, cancellation, and patient access flows
-- Prescription upload with mock OCR and mock AI parsing
+- Prescription upload with mock OCR and configurable AI parsing
 - Automatic medication creation from processed prescriptions
 - DynamoDB separate-table persistence
 - Swagger API documentation
@@ -58,7 +58,7 @@ The backend uses a repository pattern so services depend on interfaces rather th
 - Reminders: reminder event lifecycle and scheduler support
 - Caregivers: invitation workflow and patient access control
 - Notifications: mock notification provider layer
-- Prescriptions: upload, mock OCR, mock AI parsing, and medication creation
+- Prescriptions: upload, mock OCR, configurable AI parsing, and medication creation
 - Database: DynamoDB DocumentClient provider
 
 ## Frontend Pages
@@ -97,13 +97,25 @@ Prescription processing is provider-based:
 4. An AI parser converts extracted text into medication-like records.
 5. The backend creates medication entries from parsed results.
 
-Current providers are intentionally mocked:
+Current OCR and storage providers are intentionally mocked:
 
 - `OCR_PROVIDER=MOCK`
-- `AI_PARSER_PROVIDER=MOCK`
 - `PRESCRIPTION_STORAGE_PROVIDER=LOCAL`
 
-This keeps the project runnable without paid APIs while preserving clean integration points for real OCR, LLM parsing, S3, and email providers.
+AI parsing supports:
+
+- `AI_PARSER_PROVIDER=MOCK`: default deterministic parser for local development and tests.
+- `AI_PARSER_PROVIDER=OPENAI`: real LLM parser using the official OpenAI SDK and structured JSON output.
+
+When using OpenAI, set:
+
+```env
+AI_PARSER_PROVIDER=OPENAI
+OPENAI_API_KEY=your-openai-api-key
+OPENAI_MODEL=gpt-4o-mini
+```
+
+The OpenAI parser validates model JSON before creating medications. It drops invalid medication entries, fails the prescription safely if no valid entries remain, and never sends raw model output directly to `MedicationsService`.
 
 ## Environment Setup
 
@@ -210,7 +222,6 @@ Add screenshots here before publishing:
 ## Future Improvements
 
 - Real OCR provider such as AWS Textract
-- Real AI parser using a production LLM workflow
 - S3 storage for prescription files
 - Refresh token rotation endpoint
 - Deployment with CI/CD
