@@ -294,3 +294,9 @@ For Gmail, use an app password, not your normal Gmail password. Never commit SMT
 Caregiver invitation emails are sent after `POST /caregivers/invite` creates the invitation. If email sending fails, the invite is still saved and the failure is logged safely.
 
 Reminder emails are sent by the reminder scheduler for due reminders with `notificationType=EMAIL`. If delivery fails, the scheduler logs safely, avoids crashing, and leaves the reminder pending for a later run.
+
+## Live Demo
+
+- Frontend: medtrack-v2-lac.vercel.app
+- Backend Health: https://medtrack-api-2r0i.onrender.com
+- Swagger API: https://medtrack-api.onrender.com/api/docs
