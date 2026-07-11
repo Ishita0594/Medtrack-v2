@@ -208,15 +208,39 @@ http://localhost:3000/api/docs
 A concise endpoint summary is available in [docs/API_SUMMARY.md](docs/API_SUMMARY.md).
 
 ## Screenshots
+### Sign In
 
-Add screenshots here before publishing:
+![Sign In Page](docs/screenshots/sign.in.png)
 
-- Login and Register
-- Patient Dashboard
-- Medication Management
-- Adherence Stats
-- Prescription Processing
-- Caregiver Access
+### Login
+
+![Login Page](docs/screenshots/login.png)
+
+### Dashboard
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+### Medications
+
+![Medications](docs/screenshots/medications.png)
+
+### Adherence Tracking
+
+![Adherence](docs/screenshots/adherence.png)
+
+### Reminders
+
+![Reminders](docs/screenshots/reminders.png)
+
+### Caregiver Management
+
+![Caregivers](docs/screenshots/caregivers.png)
+
+### Prescription Processing
+
+![Prescription Processing](docs/screenshots/prescriptions.png)
+
+
 
 ## Security Notes
 
