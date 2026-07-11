@@ -297,6 +297,6 @@ Reminder emails are sent by the reminder scheduler for due reminders with `notif
 
 ## Live Demo
 
-- Frontend: medtrack-v2-lac.vercel.app
+- Frontend: https://medtrack-v2-lac.vercel.app
 - Backend Health: https://medtrack-api-2r0i.onrender.com
 - Swagger API: https://medtrack-api.onrender.com/api/docs
